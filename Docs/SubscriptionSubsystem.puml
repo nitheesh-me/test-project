@@ -1,3 +1,38 @@
 @startuml
-Bob -> Alice : hello
+
+abstract class BaseResource {
+    - HttpServletRequest request
+    - String appKey
+    - IPrincipal principal
+
+    - boolean authenticate()
+    - void checkBaseFunction(BaseFunction baseFunction) throws JSONException
+    - boolean hasBaseFunction(BaseFunction baseFunction) throws JSONException
+}
+
+interface Principal
+interface IPrincipal {
+    + boolean isAnonymous()
+}
+
+interface UserPrincipal extends IPrincipal {
+    + Set<String> getBaseFunctionSet()
+}
+
+class SecurityFilter {
+    {static} + String PRINCIPAL_ATTRIBUTE
+}
+
+class ForbiddenClientException
+class JSONException
+
+BaseResource --> HttpServletRequest : uses
+BaseResource --> SecurityFilter : uses
+BaseResource --> Principal : uses
+BaseResource --> IPrincipal : uses
+BaseResource --> UserPrincipal : uses
+BaseResource --> BaseFunction : uses
+BaseResource --> ForbiddenClientException : throws
+BaseResource --> JSONException : throws
+
 @enduml
