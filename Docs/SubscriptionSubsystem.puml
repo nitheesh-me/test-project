@@ -1,38 +1,312 @@
 @startuml
 
-abstract class BaseResource {
-    - HttpServletRequest request
-    - String appKey
-    - IPrincipal principal
+package "com.sismics.reader.rest.resource" {
+    abstract class BaseResource {
+        +authenticate(): boolean
+        +checkBaseFunction(baseFunction: BaseFunction): void
+        +hasBaseFunction(baseFunction: BaseFunction): boolean
+    }
 
-    - boolean authenticate()
-    - void checkBaseFunction(BaseFunction baseFunction) throws JSONException
-    - boolean hasBaseFunction(BaseFunction baseFunction) throws JSONException
+    class SubscriptionResource extends BaseResource {
+        +list(unread: boolean): Response
+        +get(id: String, unread: boolean, limit: Integer, afterArticle: String): Response
+        +getSynchronization(id: String): Response
+        +add(url: String, title: String): Response
+        +update(id: String, title: String, categoryId: String, order: Integer): Response
+        +favicon(id: String): Response
+        +read(id: String): Response
+        +delete(id: String): Response
+        +importFile(fileBodyPart: FormDataBodyPart): Response
+        +export(): Response
+    }
+
+    class CategoryResource extends BaseResource {
+        +list(): Response
+        +get(id: String, unread: boolean, limit: Integer, afterArticle: String): Response
+        +add(name: String): Response
+        +delete(id: String): Response
+        +read(id: String): Response
+        +update(id: String, name: String, order: Integer, folded: Boolean): Response
+    }
+
+    class AllResource extends BaseResource {
+        +get(unread: boolean, limit: Integer, afterArticle: String): Response
+        +read(): Response
+    }
+
+    class ArticleResource extends BaseResource {
+        +read(id: String): Response
+        +readMultiple(idList: List<String>): Response
+        +unread(id: String): Response
+        +unreadMultiple(idList: List<String>): Response
+    }
 }
 
-interface Principal
-interface IPrincipal {
-    + boolean isAnonymous()
+package "com.sismics.reader.core.dao.jpa" {
+    class FeedSubscriptionDao {
+        +findByCriteria(criteria: FeedSubscriptionCriteria): List<FeedSubscriptionDto>
+        +create(feedSubscription: FeedSubscription): String
+        +update(feedSubscription: FeedSubscription): void
+        +delete(id: String): void
+        +reorder(feedSubscription: FeedSubscription, order: Integer): void
+        +updateUnreadCount(id: String, count: Integer): void
+    }
+
+    class CategoryDao {
+        +getRootCategory(userId: String): Category
+        +findSubCategory(parentId: String, userId: String): List<Category>
+        +getCategory(categoryId: String, userId: String): Category
+        +create(category: Category): String
+        +delete(id: String): void
+        +update(category: Category): void
+        +reorder(category: Category, order: Integer): void
+    }
+
+    class UserArticleDao {
+        +findByCriteria(criteria: UserArticleCriteria): List<UserArticleDto>
+        +markAsRead(criteria: UserArticleCriteria): void
+        +getUserArticle(id: String, userId: String): UserArticle
+        +update(userArticle: UserArticle): void
+    }
+
+    class ArticleDao {
+        +findFirstByCriteria(criteria: ArticleCriteria): ArticleDto
+    }
+
+    class FeedSynchronizationDao {
+        +findByFeedId(feedId: String): List<FeedSynchronization>
+    }
+
+    class UserDao {
+        +getById(userId: String): User
+    }
 }
 
-interface UserPrincipal extends IPrincipal {
-    + Set<String> getBaseFunctionSet()
+package "com.sismics.reader.core.dao.jpa.dto" {
+    class FeedSubscriptionDto {
+        -id: String
+        -feedId: String
+        -userId: String
+        -categoryId: String
+        -title: String
+        -unreadCount: Integer
+        -feedSubscriptionTitle: String
+        -feedRssUrl: String
+        -feedUrl: String
+        -feedTitle: String
+        -feedDescription: String
+        -categoryName: String
+        -createDate: Date
+    }
+
+    class UserArticleDto {
+        -id: String
+        -userId: String
+        -articleId: String
+        -feedId: String
+        -articlePublicationTimestamp: Long
+        -subscribed: boolean
+        -visible: boolean
+    }
+
+    class ArticleDto {
+        -id: String
+        -feedId: String
+        -title: String
+        -url: String
+        -publicationDate: Date
+    }
 }
 
-class SecurityFilter {
-    {static} + String PRINCIPAL_ATTRIBUTE
+package "com.sismics.reader.core.model.jpa" {
+    class FeedSubscription {
+        -id: String
+        -userId: String
+        -feedId: String
+        -categoryId: String
+        -title: String
+        -order: Integer
+        -unreadCount: Integer
+    }
+
+    class Category {
+        -id: String
+        -name: String
+        -folded: boolean
+        -parentId: String
+        -order: Integer
+    }
+
+    class UserArticle {
+        -id: String
+        -userId: String
+        -articleId: String
+        -readDate: Date
+    }
+
+    class FeedSynchronization {
+        -id: String
+        -feedId: String
+        -success: boolean
+        -message: String
+        -duration: Integer
+        -createDate: Date
+    }
+
+    class User {
+        -id: String
+        -name: String
+        -locale: String
+    }
 }
 
-class ForbiddenClientException
-class JSONException
+package "com.sismics.security" {
+    interface IPrincipal {
+        +isAnonymous(): boolean
+    }
 
-BaseResource --> HttpServletRequest : uses
-BaseResource --> SecurityFilter : uses
-BaseResource --> Principal : uses
-BaseResource --> IPrincipal : uses
-BaseResource --> UserPrincipal : uses
+    class UserPrincipal implements IPrincipal {
+        +getBaseFunctionSet(): Set<String>
+    }
+}
+
+package "com.sismics.reader.rest.constant" {
+    class BaseFunction {
+        +name(): String
+    }
+}
+
+package "com.sismics.rest.exception" {
+    class ClientException {
+        -message: String
+        -code: String
+    }
+
+    class ForbiddenClientException {
+    }
+
+    class ServerException {
+        -message: String
+        -code: String
+    }
+}
+
+package "com.sismics.reader.rest.assembler" {
+    class ArticleAssembler {
+        +asJson(userArticle: UserArticleDto): JSONObject
+    }
+}
+
+' Relationships
+BaseResource <|-- SubscriptionResource
+BaseResource <|-- CategoryResource
+BaseResource <|-- AllResource
+BaseResource <|-- ArticleResource
+
+SubscriptionResource --> FeedSubscriptionDao : uses
+SubscriptionResource --> CategoryDao : uses
+SubscriptionResource --> UserArticleDao : uses
+SubscriptionResource --> FeedSynchronizationDao : uses
+SubscriptionResource --> UserDao : uses
+SubscriptionResource --> ArticleAssembler : uses
+
+CategoryResource --> CategoryDao : uses
+CategoryResource --> FeedSubscriptionDao : uses
+CategoryResource --> UserArticleDao : uses
+
+AllResource --> UserArticleDao : uses
+AllResource --> FeedSubscriptionDao : uses
+AllResource --> ArticleAssembler : uses
+
+ArticleResource --> UserArticleDao : uses
+ArticleResource --> ArticleDao : uses
+ArticleResource --> FeedSubscriptionDao : uses
+
+FeedSubscriptionDao --> FeedSubscription : manages
+CategoryDao --> Category : manages
+UserArticleDao --> UserArticle : manages
+ArticleDao --> ArticleDto : manages
+FeedSynchronizationDao --> FeedSynchronization : manages
+UserDao --> User : manages
+
+BaseResource --> IPrincipal : depends on
+BaseResource --> BaseFunction : depends on
+
+IPrincipal <|.. UserPrincipal
+
+ClientException <|-- ForbiddenClientException
+ClientException <|-- ServerException
+
+package "com.sismics.util" {
+    class MessageUtil {
+        +getMessage(locale: Locale, key: String, args: Object...): String
+        +getMessage(locale: Locale): ResourceBundle
+    }
+}
+
+package "com.sismics.rest.util" {
+    class ValidationUtil {
+        +validateRequired(s: Object, name: String): void
+        +validateLength(s: String, name: String, lengthMin: Integer, lengthMax: Integer, nullable: boolean): String
+        +validateStringNotBlank(s: String, name: String): String
+        +validateEmail(s: String, name: String): void
+        +validateHttpUrl(s: String, name: String): String
+        +validateAlphanumeric(s: String, name: String): void
+        +validateDate(s: String, name: String, nullable: boolean): Date
+    }
+
+    class JsonUtil {
+        +append(o: JSONObject, key: String, value: JSONObject): JSONObject
+    }
+}
+
+package "com.sismics.reader.core.util.jpa" {
+    class PaginatedLists {
+        +create(pageSize: Integer, offset: Integer): PaginatedList<E>
+        +executeQuery(queryParam: QueryParam): List<E>
+        +executePaginatedQuery(paginatedList: PaginatedList<E>, queryParam: QueryParam, sortCriteria: SortCriteria): void
+    }
+
+    class PaginatedList<T> {
+        -limit: int
+        -offset: int
+        -resultCount: int
+        -resultList: List<T>
+        +getResultCount(): int
+        +setResultCount(resultCount: int): void
+        +getResultList(): List<T>
+        +setResultList(resultList: List<T>): void
+        +getLimit(): int
+        +getOffset(): int
+    }
+}
+
+' Relationships
+BaseResource --> MessageUtil : uses
+BaseResource --> ValidationUtil : uses
+BaseResource --> JsonUtil : uses
 BaseResource --> BaseFunction : uses
-BaseResource --> ForbiddenClientException : throws
-BaseResource --> JSONException : throws
+
+SubscriptionResource --> ArticleAssembler : uses
+AllResource --> ArticleAssembler : uses
+ArticleResource --> ArticleAssembler : uses
+
+PaginatedLists --> PaginatedList : manages
+
+package "com.sismics.reader.core.service" {
+    class FeedService extends AbstractScheduledService {
+        +synchronizeAllFeeds(): void
+        +synchronize(url: String): Feed
+        +createInitialUserArticle(userId: String, feedSubscription: FeedSubscription): void
+    }
+}
+
+' Relationships
+FeedService --> FeedSubscriptionDao : uses
+FeedService --> CategoryDao : uses
+FeedService --> UserArticleDao : uses
+FeedService --> ArticleDao : uses
+FeedService --> FeedSynchronizationDao : uses
+FeedService --> UserDao : uses
 
 @enduml
