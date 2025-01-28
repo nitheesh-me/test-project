@@ -1,21 +1,71 @@
 @startuml ui_interface_class_diagram
+'Understand the code from interface(REST) to UI'
+/'
+ // Calling API for all the api interaction
+'/
 
-class User {
-  +String name
-  +String email
-  +void login()
-  +void logout()
+/'Load have the api calling and build the feed list
+Add item to context.bumper list
+reset the feed context
+target based URL
+List of endpoint
+1. /All
+2. /all?unread=true
+3. ../api/subscription/{id}
+4. ../api/category/{id}
+'/
+package "Javascript"{
+  class feed {
+    -String id
+    -String title
+    -String url
+    -List<Article> articles
+    
+    +void load()
+    +void triggerPaging()
+    +void cache()
+    +void reset() 
+    +void init()
+  }
+
+  'Build the feed list, add all meta data and display the feed list'
+  class article {
+    -String id
+    -String title 
+    -String content
+    -Date publishDate
+    -boolean isRead
+    
+    +void build()
+    +void read()
+    +void top()
+  }
+
+  class util {
+    +init(): void
+    +ajax(): XMLHttpRequest
+    +buildLoader(): String
+    +escape(): String
+  }
+
+  feed --> article : contains
+  feed --> util : uses
 }
 
-class Admin {
-  +void manageUsers()
-}
+package readerWeb {
+  class BaseResource {
+    +void init()
+    +Response handleRequest(Request request)
+  }
 
-class Guest {
-  +void browseCatalog()
-}
+  class AllResource {
+    +Response getAll()
+    +Response getUnread()
+    +Response getSubscription(String id)
+    +Response getCategory(String id)
+  }
 
-User <|-- Admin
-User <|-- Guest
+  AllResource --|> BaseResource
+}
 
 @enduml
