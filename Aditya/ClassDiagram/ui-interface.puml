@@ -1,0 +1,21 @@
+@startuml ui_interface_class_diagram
+
+class User {
+  +String name
+  +String email
+  +void login()
+  +void logout()
+}
+
+class Admin {
+  +void manageUsers()
+}
+
+class Guest {
+  +void browseCatalog()
+}
+
+User <|-- Admin
+User <|-- Guest
+
+@enduml
