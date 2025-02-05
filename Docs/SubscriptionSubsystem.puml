@@ -1,5 +1,8 @@
 @startuml
 
+' ******************************
+' Packages and Classes
+' ******************************
 package "com.sismics.reader.rest.resource" {
     abstract class BaseResource {
         +authenticate(): boolean
@@ -41,7 +44,6 @@ package "com.sismics.reader.rest.resource" {
         +unreadMultiple(idList: List<String>): Response
     }
 }
-
 package "com.sismics.reader.core.dao.jpa" {
     class FeedSubscriptionDao {
         +findByCriteria(criteria: FeedSubscriptionCriteria): List<FeedSubscriptionDto>
@@ -50,6 +52,9 @@ package "com.sismics.reader.core.dao.jpa" {
         +delete(id: String): void
         +reorder(feedSubscription: FeedSubscription, order: Integer): void
         +updateUnreadCount(id: String, count: Integer): void
+        +getFeedSubscription(id: String, userId: String): FeedSubscription
+        +findByCategory(categoryId: String): List<FeedSubscription>
+        +getCategoryCount(categoryId: String, userId: String): int
     }
 
     class CategoryDao {
@@ -60,6 +65,8 @@ package "com.sismics.reader.core.dao.jpa" {
         +delete(id: String): void
         +update(category: Category): void
         +reorder(category: Category, order: Integer): void
+        +getCategoryCount(parentId: String, userId: String): int
+        +findAllCategory(userId: String): List<Category>
     }
 
     class UserArticleDao {
@@ -67,6 +74,8 @@ package "com.sismics.reader.core.dao.jpa" {
         +markAsRead(criteria: UserArticleCriteria): void
         +getUserArticle(id: String, userId: String): UserArticle
         +update(userArticle: UserArticle): void
+        +create(userArticle: UserArticle): String
+        +delete(id: String): void
     }
 
     class ArticleDao {
@@ -81,7 +90,6 @@ package "com.sismics.reader.core.dao.jpa" {
         +getById(userId: String): User
     }
 }
-
 package "com.sismics.reader.core.dao.jpa.dto" {
     class FeedSubscriptionDto {
         -id: String
@@ -158,6 +166,44 @@ package "com.sismics.reader.core.model.jpa" {
         -name: String
         -locale: String
     }
+
+    class Article {
+        -id: String
+        -feedId: String
+        -url: String
+        -baseUri: String
+        -guid: String
+        -title: String
+        -creator: String
+        -description: String
+        -commentUrl: String
+        -commentCount: Integer
+        -enclosureUrl: String
+        -enclosureLength: Integer
+        -enclosureType: String
+        -publicationDate: Date
+        -createDate: Date
+        -deleteDate: Date
+    }
+
+    class Job {
+        -id: String
+        -userId: String
+        -name: String
+        -createDate: Date
+        -startDate: Date
+        -endDate: Date
+        -deleteDate: Date
+    }
+
+    class JobEvent {
+        -id: String
+        -jobId: String
+        -name: String
+        -value: String
+        -createDate: Date
+        -deleteDate: Date
+    }
 }
 
 package "com.sismics.security" {
@@ -196,46 +242,6 @@ package "com.sismics.reader.rest.assembler" {
         +asJson(userArticle: UserArticleDto): JSONObject
     }
 }
-
-' Relationships
-BaseResource <|-- SubscriptionResource
-BaseResource <|-- CategoryResource
-BaseResource <|-- AllResource
-BaseResource <|-- ArticleResource
-
-SubscriptionResource --> FeedSubscriptionDao : uses
-SubscriptionResource --> CategoryDao : uses
-SubscriptionResource --> UserArticleDao : uses
-SubscriptionResource --> FeedSynchronizationDao : uses
-SubscriptionResource --> UserDao : uses
-SubscriptionResource --> ArticleAssembler : uses
-
-CategoryResource --> CategoryDao : uses
-CategoryResource --> FeedSubscriptionDao : uses
-CategoryResource --> UserArticleDao : uses
-
-AllResource --> UserArticleDao : uses
-AllResource --> FeedSubscriptionDao : uses
-AllResource --> ArticleAssembler : uses
-
-ArticleResource --> UserArticleDao : uses
-ArticleResource --> ArticleDao : uses
-ArticleResource --> FeedSubscriptionDao : uses
-
-FeedSubscriptionDao --> FeedSubscription : manages
-CategoryDao --> Category : manages
-UserArticleDao --> UserArticle : manages
-ArticleDao --> ArticleDto : manages
-FeedSynchronizationDao --> FeedSynchronization : manages
-UserDao --> User : manages
-
-BaseResource --> IPrincipal : depends on
-BaseResource --> BaseFunction : depends on
-
-IPrincipal <|.. UserPrincipal
-
-ClientException <|-- ForbiddenClientException
-ClientException <|-- ServerException
 
 package "com.sismics.util" {
     class MessageUtil {
@@ -281,18 +287,6 @@ package "com.sismics.reader.core.util.jpa" {
     }
 }
 
-' Relationships
-BaseResource --> MessageUtil : uses
-BaseResource --> ValidationUtil : uses
-BaseResource --> JsonUtil : uses
-BaseResource --> BaseFunction : uses
-
-SubscriptionResource --> ArticleAssembler : uses
-AllResource --> ArticleAssembler : uses
-ArticleResource --> ArticleAssembler : uses
-
-PaginatedLists --> PaginatedList : manages
-
 package "com.sismics.reader.core.service" {
     class FeedService extends AbstractScheduledService {
         +synchronizeAllFeeds(): void
@@ -301,12 +295,257 @@ package "com.sismics.reader.core.service" {
     }
 }
 
-' Relationships
-FeedService --> FeedSubscriptionDao : uses
-FeedService --> CategoryDao : uses
-FeedService --> UserArticleDao : uses
-FeedService --> ArticleDao : uses
-FeedService --> FeedSynchronizationDao : uses
-FeedService --> UserDao : uses
+package "com.sismics.reader.core.dao.file.opml" {
+    class OpmlFlattener {
+        +Map<String, List<Outline>> flatten(List<Outline> outlineList)
+        -void flatten(List<Outline> outlineTree, Map<String, List<Outline>> outlineMap, String prefix)
+        -String getPrefix(Outline outline, String prefix)
+    }
 
+    class OpmlReader {
+        -Logger log
+        -String content
+        -Outline rootOutline
+        -Outline currentOutline
+        -Element currentElement
+        -Stack<Element> elementStack
+        -Stack<Outline> outlineStack
+
+        +OpmlReader()
+        +void read(InputStream is)
+        +void startElement(String uri, String localName, String qName, Attributes attributes)
+        +void endElement(String uri, String localName, String qName)
+        -void pushElement(Element newElement)
+        -void popElement()
+        +void characters(char[] ch, int start, int length)
+        +List<Outline> getOutlineList()
+    }
+
+    class Outline {
+        -String text
+        -String title
+        -String type
+        -String xmlUrl
+        -String htmlUrl
+        -List<Outline> outlineList
+
+        +Outline()
+        +String getText()
+        +void setText(String text)
+        +String getTitle()
+        +void setTitle(String title)
+        +String getType()
+        +void setType(String type)
+        +String getXmlUrl()
+        +void setXmlUrl(String xmlUrl)
+        +String getHtmlUrl()
+        +void setHtmlUrl(String htmlUrl)
+        +List<Outline> getOutlineList()
+    }
+}
+
+package "com.sismics.reader.core.event" {
+    class SubscriptionImportedEvent {
+        -User user
+        -File importFile
+
+        +User getUser()
+        +void setUser(User user)
+        +File getImportFile()
+        +void setImportFile(File importFile)
+        +String toString()
+    }
+
+    class ArticleCreatedAsyncEvent {
+        -List<Article> articleList
+
+        +List<Article> getArticleList()
+        +void setArticleList(List<Article> articleList)
+        +String toString()
+    }
+
+    class ArticleDeletedAsyncEvent {
+        -List<Article> articleList
+
+        +List<Article> getArticleList()
+        +void setArticleList(List<Article> articleList)
+        +String toString()
+    }
+
+    class ArticleUpdatedAsyncEvent {
+        -List<Article> articleList
+
+        +List<Article> getArticleList()
+        +void setArticleList(List<Article> articleList)
+        +String toString()
+    }
+}
+
+package "com.sismics.reader.core.listener.async" {
+    class SubscriptionImportAsyncListener {
+        -Logger log
+
+        +void onSubscriptionImport(SubscriptionImportedEvent subscriptionImportedEvent)
+        -Job createJob(User user, File importFile)
+        -long getFeedCount(List<Outline> outlineList)
+        -void processImportFile(User user, File importFile, Job job)
+        -void importOutline(User user, List<Outline> outlineList, Job job)
+        -void importFeedFromStarred(User user, Feed feed, Article article)
+    }
+}
+
+package "com.sismics.reader.core.model.context" {
+    class AppContext {
+        -static AppContext instance
+        -EventBus eventBus
+        -EventBus asyncEventBus
+        -EventBus mailEventBus
+        -EventBus importEventBus
+        -FeedService feedService
+        -IndexingService indexingService
+        -List<ExecutorService> asyncExecutorList
+
+        -AppContext()
+        -void resetEventBus()
+        +static AppContext getInstance()
+        +void waitForAsync()
+        -EventBus newAsyncEventBus()
+        +EventBus getEventBus()
+        +EventBus getAsyncEventBus()
+        +EventBus getMailEventBus()
+        +EventBus getImportEventBus()
+        +FeedService getFeedService()
+        +IndexingService getIndexingService()
+    }
+}
+
+package "com.sismics.reader.core.dao.jpa.criteria" {
+    class FeedSubscriptionCriteria {
+        -String id
+        -String userId
+        -String feedId
+        -String categoryId
+        -String feedUrl
+        -boolean unread
+
+        +String getId()
+        +FeedSubscriptionCriteria setId(String id)
+        +String getUserId()
+        +FeedSubscriptionCriteria setUserId(String userId)
+        +String getFeedId()
+        +FeedSubscriptionCriteria setFeedId(String feedId)
+        +String getCategoryId()
+        +FeedSubscriptionCriteria setCategoryId(String categoryId)
+        +String getFeedUrl()
+        +FeedSubscriptionCriteria setFeedUrl(String feedUrl)
+        +boolean isUnread()
+        +FeedSubscriptionCriteria setUnread(boolean unread)
+    }
+
+    class UserArticleCriteria {
+        -String userId
+        -String feedId
+        -boolean visible
+        -boolean subscribed
+        -String feedSubscriptionId
+        -String categoryId
+        -boolean unread
+        -boolean starred
+        -String articleId
+        -List<String> articleIdIn
+        -String userArticleId
+        -Date articlePublicationDateMax
+        -Date userArticleStarredDateMax
+        -String articleIdMax
+        -String userArticleIdMax
+        -boolean fetchAllFeedSubscription
+
+        +String getUserId()
+        +UserArticleCriteria setUserId(String userId)
+        +String getFeedId()
+        +UserArticleCriteria setFeedId(String feedId)
+        +boolean isVisible()
+        +UserArticleCriteria setVisible(boolean visible)
+        +boolean isSubscribed()
+        +UserArticleCriteria setSubscribed(boolean subscribed)
+        +String getFeedSubscriptionId()
+        +UserArticleCriteria setFeedSubscriptionId(String feedSubscriptionId)
+        +boolean isUnread()
+        +UserArticleCriteria setUnread(boolean unread)
+        +String getCategoryId()
+        +UserArticleCriteria setCategoryId(String categoryId)
+        +boolean isStarred()
+        +UserArticleCriteria setStarred(boolean starred)
+        +String getArticleId()
+        +UserArticleCriteria setArticleId(String articleId)
+        +List<String> getArticleIdIn()
+        +UserArticleCriteria setArticleIdIn(List<String> articleIdIn)
+        +String getUserArticleId()
+        +UserArticleCriteria setUserArticleId(String userArticleId)
+        +Date getArticlePublicationDateMax()
+        +UserArticleCriteria setArticlePublicationDateMax(Date articlePublicationDateMax)
+        +Date getUserArticleStarredDateMax()
+        +UserArticleCriteria setUserArticleStarredDateMax(Date userArticleStarredDateMax)
+        +String getArticleIdMax()
+        +UserArticleCriteria setArticleIdMax(String articleIdMax)
+        +String getUserArticleIdMax()
+        +UserArticleCriteria setUserArticleIdMax(String userArticleIdMax)
+        +boolean isFetchAllFeedSubscription()
+        +UserArticleCriteria setFetchAllFeedSubscription(boolean fetchAllFeedSubscription)
+    }
+}
+' ******************************
+' Relationships
+' ******************************
+
+AllResource --> ArticleAssembler : uses
+AllResource --> FeedSubscriptionDao : uses
+AllResource --> UserArticleDao : uses
+AppContext o-- ArticleUpdatedAsyncEvent : handles
+AppContext o-- SubscriptionImportAsyncListener : registers
+ArticleDao --> ArticleDto : manages
+ArticleResource --> ArticleAssembler : uses
+ArticleResource --> ArticleDao : uses
+ArticleResource --> FeedSubscriptionDao : uses
+ArticleResource --> UserArticleDao : uses
+BaseResource --> BaseFunction : depends on
+BaseResource --> BaseFunction : uses
+BaseResource --> IPrincipal : depends on
+BaseResource --> JsonUtil : uses
+BaseResource --> MessageUtil : uses
+BaseResource --> ValidationUtil : uses
+CategoryDao *-- Category : manages
+CategoryResource --> ArticleAssembler : uses
+CategoryResource --> CategoryDao : uses
+CategoryResource --> FeedSubscriptionDao : uses
+CategoryResource --> UserArticleDao : uses
+CategoryResource --> ValidationUtil : uses
+ClientException <|-- ForbiddenClientException
+ClientException <|-- ServerException
+FeedService --> ArticleDao : uses
+FeedService --> CategoryDao : uses
+FeedService --> FeedSubscriptionDao : uses
+FeedService --> FeedSynchronizationDao : uses
+FeedService --> UserArticleDao : uses
+FeedService --> UserDao : uses
+FeedSubscriptionDao *-- FeedSubscription : manages
+FeedSynchronizationDao *-- FeedSynchronization : manages
+OpmlFlattener --> Outline : uses
+OpmlReader --> Outline : uses
+PaginatedLists *-- PaginatedList : manages
+SubscriptionImportAsyncListener o-- Article : uses
+SubscriptionImportAsyncListener o-- FeedSubscription : uses
+SubscriptionImportAsyncListener o-- Job : uses
+SubscriptionImportAsyncListener o-- JobEvent : uses
+SubscriptionImportAsyncListener o-- OpmlFlattener : uses
+SubscriptionImportAsyncListener o-- OpmlReader : uses
+SubscriptionImportAsyncListener o-- SubscriptionImportedEvent : handles
+SubscriptionResource --> ArticleAssembler : uses
+SubscriptionResource --> CategoryDao : uses
+SubscriptionResource --> FeedSubscriptionDao : uses
+SubscriptionResource --> FeedSynchronizationDao : uses
+SubscriptionResource --> UserArticleDao : uses
+SubscriptionResource --> UserDao : uses
+UserArticleDao *-- UserArticle : uses
+UserDao --> User : manages
 @enduml
