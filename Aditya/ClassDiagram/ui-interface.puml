@@ -132,6 +132,19 @@ package "Content Subsystem"{
         + void delete()
     }
 
+    class FeedDao {
+        + QueryParam getQueryParam()
+        + String create()
+        + void delete()
+        + Feed getByRssUrl()
+        + Feed update()
+    }
+
+    class FeedSynchronizationDao {
+        + void create()
+        + void deleteOldFeedSynchronization()
+    }
+
     class FeedSubscriptionDao {
         + void update()
         + void reorder()
@@ -141,6 +154,7 @@ package "Content Subsystem"{
   ArticleDao --|> BaseDao
   UserArticleDao --|> BaseDao
   FeedSubscriptionDao --|> BaseDao
+  FeedDao --|> BaseDao
 
   AllResource --> UserArticleDao : Uses
   AllResource --> FeedSubscriptionDao : Uses
@@ -154,47 +168,107 @@ package "Content Subsystem"{
 
   package "com.sismics.reader.core.model.jpa" {
     class Article {
-        + String getId()
-        + void setId()
-        + String getUrl()
-        + void setUrl()
-        + String getTitle()
-        + void setTitle()
-        + String getCreator()
-        + void setCreator()
-        + String getDescription()
-        + void setDescription()
-        + Date getPublicationDate()
-        + void setPublicationDate()
+        - String id
+        - String feedId
+        - String url
+        - String baseUri
+        - String guid
+        - String title
+        - String creator
+        - String description
+        - String commentUrl
+        - Integer commentCount
+        - String enclosureUrl
+        - Integer enclosureLength
+        - String enclosureType
+        - Date publicationDate
+        - Date createDate
+        - Date deleteDate
     }
 
     class UserArticle {
-        + Date getReadDate()
-        + void setReadDate()
-        + String getArticleId()
+        - String id
+        - String userId
+        - String articleId
+        - Date createDate
+        - Date readDate
+        - Date starredDate
+        - Date deleteDate
     }
 
     class Category {
-        + String getId()
-        + void setId()
-        + String getName()
-        + void setName()
-        + String getParentId()
-        + void setParentId()
-        + int getOrder()
-        + void setOrder()
-        + boolean isFolded()
-        + void setFolded()
+        - String id
+        - String name
+        - String userId
+        - String parentId
+        - int order
+        - boolean folded
+        - Date createDate
+        - Date deleteDate
     }
 
     class FeedSubscription {
-        + void setCategoryId()
+        - String id
+        - String userId
+        - String feedId
+        - String categoryId
+        - String title
+        - Integer order
+        - int unreadCount
+        - Date createDate
+        - Date deleteDate
+    }
+
+    class FeedSynchronization {
+        - String feedId
+        - boolean success
+        - String message
+        - int duration
+    }
+
+    class Feed {
+        - String id
+        - String rssUrl
+        - String url
+        - String baseUri
+        - String title
+        - String language
+        - String description
+        - Date createDate
+        - Date lastFetchDate
+        - Date deleteDate
     }
   }
   ArticleDao --> Article : Uses
   UserArticleDao --> UserArticle : Uses
   FeedSubscriptionDao --> FeedSubscription : Uses
   CategoryDao --> Category : Uses
+
+  package "com.sismics.reader.core.service" {
+    class FeedService {
+        + void synchronizeAllFeeds()
+        + Feed synchronize()
+        + void createInitialUserArticle()
+        - boolean isFaviconUpdated()
+        - RssReader parseFeedOrPage()
+        - void logParsingError()
+        - void completeArticleList()
+        - List getArticleToRemove()
+        - List getNewerArticleList()
+        - Article getOldestArticle()
+    }
+  }
+
+  FeedService --> FeedDao : Uses
+  FeedService --> ArticleDao : Uses
+  FeedService --> UserArticleDao : Uses
+  FeedService --> FeedSubscriptionDao : Uses
+  FeedService --> FeedSynchronizationDao : Uses
+  FeedService --> Feed : Uses
+  FeedService --> Article : Uses
+  FeedService --> UserArticle : Uses
+  FeedService --> FeedSubscription : Uses
+  FeedService --> FeedSynchronization : Uses
 }
 
 
