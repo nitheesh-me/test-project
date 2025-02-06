@@ -17,7 +17,6 @@ List of endpoint
 package "Content Subsystem"{
   package "Webapp"{
     class feed {
-      -
       -String title
       -String url
       -List articles
