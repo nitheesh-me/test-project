@@ -92,10 +92,24 @@ package "Content Subsystem"{
         + Response update()
     }
 
+    class SubscriptionResource {
+        + Response list()
+        + Response get()
+        + Response getSynchronization()
+        + Response add()
+        + Response update()
+        + Response favicon()
+        + Response read()
+        + Response delete()
+        + Response importFile()
+        + Response export()
+    }
+
     AllResource --|> BaseResource
     ArticleResource --|> BaseResource
     StarredResource --|> BaseResource
     CategoryResource --|> BaseResource
+    SubscriptionResource --|> BaseResource
   }
 
   package "com.sismics.util.jpa" {
@@ -134,6 +148,7 @@ package "Content Subsystem"{
 
     class FeedDao {
         + QueryParam getQueryParam()
+        + Feed getByRssUrl()
         + String create()
         + void delete()
         + Feed getByRssUrl()
@@ -143,12 +158,17 @@ package "Content Subsystem"{
     class FeedSynchronizationDao {
         + void create()
         + void deleteOldFeedSynchronization()
+        + List findByFeedId()
     }
 
     class FeedSubscriptionDao {
         + void update()
         + void reorder()
+        + void delete()
+        + String create()
+        + void reorder()
         + void updateUnreadCount()
+        + FeedSubscription getFeedSubscription()
     }
   }
   ArticleDao --|> BaseDao
@@ -270,7 +290,5 @@ package "Content Subsystem"{
   FeedService --> FeedSubscription : Uses
   FeedService --> FeedSynchronization : Uses
 }
-
-
 
 @enduml
