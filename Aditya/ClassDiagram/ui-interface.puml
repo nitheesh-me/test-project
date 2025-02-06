@@ -185,6 +185,13 @@ package "Content Subsystem"{
   CategoryResource --> CategoryDao : Uses
   CategoryResource --> FeedSubscriptionDao : Uses
   CategoryResource --> UserArticleDao : Uses
+  SubscriptionResource --> FeedSubscriptionDao : Uses
+  SubscriptionResource --> FeedDao : Uses
+  SubscriptionResource --> UserArticleDao : Uses
+  SubscriptionResource --> FeedSynchronizationDao : Uses
+  SubscriptionResource --> CategoryDao : Uses
+  SubscriptionResource --> UserDao : Uses
+  SubscriptionResource --> FeedService : Uses
 
   package "com.sismics.reader.core.model.jpa" {
     class Article {
