@@ -14,58 +14,189 @@ List of endpoint
 3. ../api/subscription/{id}
 4. ../api/category/{id}
 '/
-package "Javascript"{
-  class feed {
-    -String id
-    -String title
-    -String url
-    -List<Article> articles
+package "Content Subsystem"{
+  package "Webapp"{
+    class feed {
+      -
+      -String title
+      -String url
+      -List articles
+      
+      +void load()
+      +void triggerPaging()
+      +void cache()
+      +void reset() 
+      +void init()
+    }
+
+    'Build the feed list, add all meta data and display the feed list'
+    class article {
+      -String title 
+      -String content
+      -Date publishDate
+      -boolean isRead
+      
+      +void build()
+      +void read()
+      +void top()
+    }
+
+    class util {
+      +init(): void
+      +ajax(): XMLHttpRequest
+      +buildLoader(): String
+      +escape(): String
+    }
+
+    feed --> article : contains
+    feed --> util : uses
+  }
+
+  package "com.sismics.reader.rest.resource" {
+    abstract class BaseResource {
+        - HttpServletRequest request
+        - String appKey
+        - IPrincipal principal
+
+        # boolean authenticate()
+        # void checkBaseFunction()
+        # boolean hasBaseFunction()
+    }
+
+    class AllResource {
+        + Response get()
+        + Response read()
+    }
+
+    class ArticleResource {
+        + Response read()
+        + Response readMultiple()
+        + Response unread()
+        + Response unreadMultiple()
+    }
     
-    +void load()
-    +void triggerPaging()
-    +void cache()
-    +void reset() 
-    +void init()
+    class StarredResource {
+        + Response get()
+        + Response star()
+        + Response unstar()
+        + Response starMultiple()
+        + Response unstarMultiple()
+    }
+
+    class CategoryResource {
+        + Response list()
+        + Response get()
+        + Response add()
+        + Response delete()
+        + Response read()
+        + Response update()
+    }
+
+    AllResource --|> BaseResource
+    ArticleResource --|> BaseResource
+    StarredResource --|> BaseResource
+    CategoryResource --|> BaseResource
   }
 
-  'Build the feed list, add all meta data and display the feed list'
-  class article {
-    -String id
-    -String title 
-    -String content
-    -Date publishDate
-    -boolean isRead
-    
-    +void build()
-    +void read()
-    +void top()
+  package "com.sismics.util.jpa" {
+    abstract class BaseDao {
+        + void findByCriteria()
+        + List findByCriteria()
+        + T findFirstByCriteria()
+        # QueryParam getQueryParam()
+    }
   }
 
-  class util {
-    +init(): void
-    +ajax(): XMLHttpRequest
-    +buildLoader(): String
-    +escape(): String
-  }
+  package "com.sismics.reader.core.dao.jpa" {
+    class CategoryDao {
+        + Category getRootCategory()
+        + Category getCategory()
+        + int getCategoryCount()
+        + String create()
+        + void update()
+        + void delete()
+        + void reorder()
+    }
 
-  feed --> article : contains
-  feed --> util : uses
+    class UserArticleDao {
+        + UserArticle getUserArticle()
+        + void update()
+        + void markAsRead()
+    }
+
+    class ArticleDao {
+        + QueryParam getQueryParam()
+        + String create()
+        + Article update()
+        + List findAll()
+        + void delete()
+    }
+
+    class FeedSubscriptionDao {
+        + void update()
+        + void reorder()
+        + void updateUnreadCount()
+    }
+  }
+  ArticleDao --|> BaseDao
+  UserArticleDao --|> BaseDao
+  FeedSubscriptionDao --|> BaseDao
+
+  AllResource --> UserArticleDao : Uses
+  AllResource --> FeedSubscriptionDao : Uses
+  ArticleResource --> UserArticleDao : Uses
+  ArticleResource --> ArticleDao : Uses
+  ArticleResource --> FeedSubscriptionDao : Uses
+  StarredResource --> UserArticleDao : Uses
+  CategoryResource --> CategoryDao : Uses
+  CategoryResource --> FeedSubscriptionDao : Uses
+  CategoryResource --> UserArticleDao : Uses
+
+  package "com.sismics.reader.core.model.jpa" {
+    class Article {
+        + String getId()
+        + void setId()
+        + String getUrl()
+        + void setUrl()
+        + String getTitle()
+        + void setTitle()
+        + String getCreator()
+        + void setCreator()
+        + String getDescription()
+        + void setDescription()
+        + Date getPublicationDate()
+        + void setPublicationDate()
+    }
+
+    class UserArticle {
+        + Date getReadDate()
+        + void setReadDate()
+        + String getArticleId()
+    }
+
+    class Category {
+        + String getId()
+        + void setId()
+        + String getName()
+        + void setName()
+        + String getParentId()
+        + void setParentId()
+        + int getOrder()
+        + void setOrder()
+        + boolean isFolded()
+        + void setFolded()
+    }
+
+    class FeedSubscription {
+        + void setCategoryId()
+    }
+  }
+  ArticleDao --> Article : Uses
+  UserArticleDao --> UserArticle : Uses
+  FeedSubscriptionDao --> FeedSubscription : Uses
+  CategoryDao --> Category : Uses
 }
 
-package readerWeb {
-  class BaseResource {
-    +void init()
-    +Response handleRequest(Request request)
-  }
 
-  class AllResource {
-    +Response getAll()
-    +Response getUnread()
-    +Response getSubscription(String id)
-    +Response getCategory(String id)
-  }
-
-  AllResource --|> BaseResource
-}
 
 @enduml
