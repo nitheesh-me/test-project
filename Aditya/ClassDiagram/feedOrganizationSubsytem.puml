@@ -53,147 +53,273 @@ package "Feed Organization Subsystem" {
         "article" --> "util" : calls ajax() & URL handling
         "article" --> "subscription" : updates unread counts
     }
-    package "Reader_core" {
-        ' ----- ARTICLE & USER-RELATED CLASSES -----
+    package "reader_core" {
 
-        class Article {
-            - id: String
-            - feedId: String
-            - url: String
-            - baseUri: String
-            - guid: String
-            - title: String
-            - creator: String
-            - description: String
-            - commentUrl: String
-            - commentCount: Integer
-            - enclosureUrl: String
-            - enclosureLength: Integer
-            - enclosureType: String
-            - publicationDate: Date
-            - createDate: Date
-            - deleteDate: Date
+        ' ----- REST API RESOURCES -----
+
+        package "rest_resource" {
+
+            abstract class BaseResource {
+                - HttpServletRequest request
+                - String appKey
+                - IPrincipal principal
+
+                # boolean authenticate()
+                # void checkBaseFunction()
+                # boolean hasBaseFunction()
+            }
+
+            class AllResource {
+                + Response get()
+                + Response read()
+            }
+
+            class ArticleResource {
+                + Response read()
+                + Response readMultiple()
+                + Response unread()
+                + Response unreadMultiple()
+            }
+            
+            class StarredResource {
+                + Response get()
+                + Response star()
+                + Response unstar()
+                + Response starMultiple()
+                + Response unstarMultiple()
+            }
+
+            class CategoryResource {
+                + Response list()
+                + Response get()
+                + Response add()
+                + Response delete()
+                + Response read()
+                + Response update()
+            }
+
+            AllResource --|> BaseResource
+            ArticleResource --|> BaseResource
+            StarredResource --|> BaseResource
+            CategoryResource --|> BaseResource
         }
 
-        ' Represents the user-specific view of an Article.
-        class UserArticle {
-            - id: String
-            - userId: String
-            - articleId: String
-            - createDate: Date
-            - readDate: Date
-            - starredDate: Date
-            - deleteDate: Date
-            + toString(): String
+        ' ----- DATA ACCESS OBJECTS -----
+
+        package "DAO" {
+            ' DAO to manage Category objects.
+            class CategoryDao {
+                + getRootCategory(): Category
+                + getCategory(): Category
+                + getCategoryCount(): int
+                + create(): String
+                + update(): void
+                + delete(): void
+                + reorder(): void
+            }
+
+            ' DAO to perform operations on UserArticle objects.
+            class UserArticleDao {
+                + create(): String
+                + update(): UserArticle
+                + markAsRead(): void
+                + delete(): void
+                + getUserArticle(): UserArticle
+            }
+
+            class ArticleDao {
+                + QueryParam getQueryParam()
+                + String create()
+                + Article update()
+                + List findAll()
+                + void delete()
+            }
+
+            class FeedDao {
+                + QueryParam getQueryParam()
+                + Feed getByRssUrl()
+                + String create()
+                + void delete()
+                + Feed getByRssUrl()
+                + Feed update()
+            }
+            
+            class FeedSynchronizationDao {
+                + void create()
+                + void deleteOldFeedSynchronization()
+                + List findByFeedId()
+            }
+
+            ' DAO for managing FeedSubscription data.
+            class FeedSubscriptionDao {
+                + void update()
+                + void reorder()
+                + void delete()
+                + String create()
+                + void reorder()
+                + void updateUnreadCount()
+                + FeedSubscription getFeedSubscription()
+            }
+
+            package "dto"{
+                ' Data Transfer Object for displaying user-article information.
+                class UserArticleDto {
+                    - id: String
+                    - readTimestamp: Long
+                    - starTimestamp: Long
+                    - feedTitle: String
+                    - feedSubscriptionId: String
+                    - feedSubscriptionTitle: String
+                    - articleId: String
+                    - articleGuid: String
+                    - articleTitle: String
+                    - articleCreator: String
+                    - articleCommentUrl: String
+                    - articleCommentCount: Integer
+                    - articleEnclosureUrl: String
+                    - articleEnclosureType: String
+                    - articlePublicationTimestamp: Long
+                }
+            }
+
+            package "criteria" {
+                ' Criteria used to filter or search user articles.
+                class UserArticleCriteria {
+                    - userId: String
+                    - feedId: String
+                    - visible: boolean
+                    - subscribed: boolean
+                    - feedSubscriptionId: String
+                    - categoryId: String
+                    - unread: boolean
+                    - starred: boolean
+                    - articleId: String
+                    - articleIdIn: List
+                    - userArticleId: String
+                    - articlePublicationDateMax: Date
+                    - userArticleStarredDateMax: Date
+                    - userArticleIdMax: String
+                    - fetchAllFeedSubscription: boolean
+                }
+            }
         }
 
-        ' Data Transfer Object for displaying user-article information.
-        class UserArticleDto {
-            - id: String
-            - readTimestamp: Long
-            - starTimestamp: Long
-            - feedTitle: String
-            - feedSubscriptionId: String
-            - feedSubscriptionTitle: String
-            - articleId: String
-            - articleGuid: String
-            - articleTitle: String
-            - articleCreator: String
-            - articleCommentUrl: String
-            - articleCommentCount: Integer
-            - articleEnclosureUrl: String
-            - articleEnclosureType: String
-            - articlePublicationTimestamp: Long
+        package "model" {
+            ' ----- ARTICLE & USER-RELATED CLASSES -----
+
+            class Article {
+                - id: String
+                - feedId: String
+                - url: String
+                - baseUri: String
+                - guid: String
+                - title: String
+                - creator: String
+                - description: String
+                - commentUrl: String
+                - commentCount: Integer
+                - enclosureUrl: String
+                - enclosureLength: Integer
+                - enclosureType: String
+                - publicationDate: Date
+                - createDate: Date
+                - deleteDate: Date
+            }
+
+            ' Represents the user-specific view of an Article.
+            class UserArticle {
+                - id: String
+                - userId: String
+                - articleId: String
+                - createDate: Date
+                - readDate: Date
+                - starredDate: Date
+                - deleteDate: Date
+                + toString(): String
+            }
+
+            ' ----- ORGANIZATION / FOLDERING CLASSES -----
+
+            ' Represents a folder or category for grouping feeds or articles.
+            class Category {
+                - id: String
+                - name: String
+                - userId: String
+                - parentId: String
+                - order: int
+                - folded: boolean
+                - createDate: Date
+                - deleteDate: Date
+            }
+
+            ' Represents a user’s subscription to a feed along with its folder (category) assignment.
+            class FeedSubscription {
+                - id: String
+                - userId: String
+                - feedId: String
+                - categoryId: String
+                - title: String
+                - order: int
+                - unreadCount: int
+                - createDate: Date
+                - deleteDate: Date
+            }
+
+            class FeedSynchronization {
+                - id : String 
+                - feedId : String 
+                - success : boolean
+                - message : String 
+                - duration : Integer 
+                - createDate : Date
+            }
+
+            ' ----- FEED CLASSES -----
+            class Feed {
+                - String id
+                - String rssUrl
+                - String url
+                - String baseUri
+                - String title
+                - String language
+                - String description
+                - Date createDate
+                - Date lastFetchDate
+                - Date deleteDate
+            }
         }
 
-        ' Criteria used to filter or search user articles.
-        class UserArticleCriteria {
-            - userId: String
-            - feedId: String
-            - visible: boolean
-            - subscribed: boolean
-            - feedSubscriptionId: String
-            - categoryId: String
-            - unread: boolean
-            - starred: boolean
-            - articleId: String
-            - articleIdIn: List
-            - userArticleId: String
-            - articlePublicationDateMax: Date
-            - userArticleStarredDateMax: Date
-            - userArticleIdMax: String
-            - fetchAllFeedSubscription: boolean
-        }
+        ' ----- Service FUNCTIONALITY -----
+        package "Service" {
+            ' Service that encapsulates search/indexing capabilities for articles.
+            class IndexingService {
+                - log: Logger
+                - directory: Directory
+                - directoryReader: DirectoryReader
+                - luceneStorageConfig: String
+                + searchArticles(): PaginatedList
+                + rebuildIndex(): void
+                + getDirectoryReader(): DirectoryReader
+            }
 
-        ' DAO to perform operations on UserArticle objects.
-        class UserArticleDao {
-            + create(): String
-            + update(): UserArticle
-            + markAsRead(): void
-            + delete(): void
-            + getUserArticle(): UserArticle
-        }
-
-        ' ----- ORGANIZATION / FOLDERING CLASSES -----
-
-        ' Represents a folder or category for grouping feeds or articles.
-        class Category {
-            - id: String
-            - name: String
-            - userId: String
-            - parentId: String
-            - order: int
-            - folded: boolean
-            - createDate: Date
-            - deleteDate: Date
-        }
-
-        ' DAO to manage Category objects.
-        class CategoryDao {
-            + getRootCategory(): Category
-            + getCategory(): Category
-            + getCategoryCount(): int
-            + create(): String
-            + update(): void
-            + delete(): void
-            + reorder(): void
-        }
-
-        ' Represents a user’s subscription to a feed along with its folder (category) assignment.
-        class FeedSubscription {
-            - id: String
-            - userId: String
-            - feedId: String
-            - categoryId: String
-            - title: String
-            - order: int
-            - unreadCount: int
-            - createDate: Date
-            - deleteDate: Date
-        }
-
-        ' DAO for managing FeedSubscription data.
-        class FeedSubscriptionDao {
-            + create(): String
-            + update(): void
-            + delete(): void
-            + updateUnreadCount(): void
-            + getFeedSubscription(): FeedSubscription
-        }
-
-        ' ----- SEARCH FUNCTIONALITY -----
-
-        ' Service that encapsulates search/indexing capabilities for articles.
-        class IndexingService {
-            - log: Logger
-            - directory: Directory
-            - directoryReader: DirectoryReader
-            - luceneStorageConfig: String
-            + searchArticles(): PaginatedList
-            + rebuildIndex(): void
+            class FeedService {
+                + void synchronizeAllFeeds()
+                + Feed synchronize()
+                + void createInitialUserArticle()
+                - boolean isFaviconUpdated()
+                - RssReader parseFeedOrPage()
+                - void logParsingError()
+                - void completeArticleList()
+                - List getArticleToRemove()
+                - List getNewerArticleList()
+                - Article getOldestArticle()
+            }
         }
 
         ' ----- RELATIONSHIPS -----
+
+        ' FeedService uses the DAO layer to perform operations.
+        FeedDao --> Feed
 
         ' A UserArticle is linked to one Article.
         UserArticle --> "1" Article : references
@@ -203,6 +329,9 @@ package "Feed Organization Subsystem" {
         UserArticleDao --> UserArticleCriteria
         UserArticleDao --> UserArticleDto
 
+        ' The ArticleDao operates on Article and uses search criteria.
+        ArticleDao --> Article
+
         ' Categories are managed by CategoryDao.
         CategoryDao --> Category
 
@@ -210,8 +339,29 @@ package "Feed Organization Subsystem" {
         FeedSubscriptionDao --> FeedSubscription
         FeedSubscription --> Category : "belongs to" 
 
+        ' FeedSynchronizationDao uses the FeedSynchronization entity
+        FeedSynchronizationDao --> FeedSynchronization
+
         ' IndexingService uses the DAO layer to perform searches.
-        IndexingService ..> UserArticleDao : uses
+        IndexingService --> UserArticleDao
+        IndexingService --> ArticleDao
+
+        ' ----- REST RESOURCE RELATIONSHIPS -----
+        ' Relationships between resources and DAOs:
+        AllResource --> UserArticleDao
+        AllResource --> FeedSubscriptionDao
+        ArticleResource --> UserArticleDao
+        ArticleResource --> ArticleDao
+        ArticleResource --> FeedSubscriptionDao
+        StarredResource --> UserArticleDao
+        CategoryResource --> CategoryDao
+        CategoryResource --> UserArticleDao
+
+        FeedService --> FeedDao 
+        FeedService --> ArticleDao 
+        FeedService --> UserArticleDao
+        FeedService --> FeedSubscriptionDao
+        FeedService --> FeedSynchronizationDao
     }
 }
 @enduml
