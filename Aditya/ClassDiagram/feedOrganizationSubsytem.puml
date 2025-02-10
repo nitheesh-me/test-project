@@ -1,213 +1,217 @@
 @startuml FeedOrganizationSubsystem
 
-' Package for Feed Organization Subsystem
-package "Feed Organization Subsystem" {
-
-    package "Reader_web" {
-
-        ' article module: handles article initialization, state updates, building HTML elements, and sharing
-        class "article" {
-            - String title 
-            - String content
-            - Date publishDate
-            - boolean isRead
-            
-            + init() : void
-            + build() : void
-            + read() : void
-            + top() : void
-            + share() : void
-        }
-        
-        ' feed module: holds UI cache and container for article items
-        class "feed" {
-            - String title
-            - String url
-            - List articles
-             
-            + load() : void
-            + triggerPaging() : void
-            + cache() : void
-            + reset() : void
-            + init() : void
-        }
-        
-        ' subscription module: used to update unread counts and titles
-        class "subscription" {
-            + updateUnreadCount() : int
-            + updateTitle() : void
-        }
-        
-        ' util module: utility functions for Ajax calls and URL handling
-        class "util" {
-            + init(): void
-            + ajax(): XMLHttpRequest
-            + buildLoader(): String
-            + escape(): String
-            + url : Urls
-        }
-        
-        ' Relationships:
-        "article" --> "feed" : uses
-        "feed" --> "util" : uses
-        "article" --> "util" : calls ajax() & URL handling
-        "article" --> "subscription" : updates unread counts
+'------------------------------------------
+' Reader_web Package (UI Layer)
+'------------------------------------------
+package "Reader_web" {
+    ' article module: handles article initialization, state updates,
+    ' building HTML elements, and sharing
+    class "article" {
+        - String title 
+        - String content
+        - Date publishDate
+        - boolean isRead
+        + init() : void
+        + build() : void
+        + read() : void
+        + top() : void
+        + share() : void
     }
-    package "reader_core" {
+    
+    ' feed module: holds UI cache and container for article items
+    class "feed" {
+        - String title
+        - String url
+        - List articles
+        + load() : void
+        + triggerPaging() : void
+        + cache() : void
+        + reset() : void
+        + init() : void
+    }
+    
+    ' subscription module: used to update unread counts and titles
+    class "subscription" {
+        + updateUnreadCount() : int
+        + updateTitle() : void
+    }
+    
+    ' util module: utility functions for Ajax calls and URL handling
+    class "util" {
+        + init() : void
+        + ajax() : XMLHttpRequest
+        + buildLoader() : String
+        + escape() : String
+        + url : Urls
+    }
+    
+    ' Relationships:
+    "article" --> "feed" 
+    "feed" --> "util" 
+    "article" --> "util" : calls ajax() & URL handling
+    "article" --> "subscription" : updates unread counts
+}
 
-        ' ----- REST API RESOURCES -----
+'------------------------------------------
+' reader_core Package (Domain & Services)
+'------------------------------------------
+package "reader_core" {
+    
+    '-------------------------------
+    ' REST API RESOURCES
+    '-------------------------------
+    package "rest_resource" {
+        abstract class BaseResource {
+            - HttpServletRequest request
+            - String appKey
+            - IPrincipal principal
+            # authenticate() : boolean
+            # checkBaseFunction() : void
+            # hasBaseFunction() : boolean
+        }
+        note right of BaseResource
+            BaseResource is the base class for all REST resources.
+            It provides authentication and authorization methods.
+        end note
 
-        package "rest_resource" {
-
-            abstract class BaseResource {
-                - HttpServletRequest request
-                - String appKey
-                - IPrincipal principal
-
-                # boolean authenticate()
-                # void checkBaseFunction()
-                # boolean hasBaseFunction()
-            }
-
-            class AllResource {
-                + Response get()
-                + Response read()
-            }
-
-            class ArticleResource {
-                + Response read()
-                + Response readMultiple()
-                + Response unread()
-                + Response unreadMultiple()
-            }
-            
-            class StarredResource {
-                + Response get()
-                + Response star()
-                + Response unstar()
-                + Response starMultiple()
-                + Response unstarMultiple()
-            }
-
-            class CategoryResource {
-                + Response list()
-                + Response get()
-                + Response add()
-                + Response delete()
-                + Response read()
-                + Response update()
-            }
-
-            AllResource --|> BaseResource
-            ArticleResource --|> BaseResource
-            StarredResource --|> BaseResource
-            CategoryResource --|> BaseResource
+        class AllResource {
+            + get() : Response
+            + read() : Response
         }
 
-        ' ----- DATA ACCESS OBJECTS -----
-
-        package "DAO" {
-            ' DAO to manage Category objects.
-            class CategoryDao {
-                + getRootCategory(): Category
-                + getCategory(): Category
-                + getCategoryCount(): int
-                + create(): String
-                + update(): void
-                + delete(): void
-                + reorder(): void
-            }
-
-            ' DAO to perform operations on UserArticle objects.
-            class UserArticleDao {
-                + create(): String
-                + update(): UserArticle
-                + markAsRead(): void
-                + delete(): void
-                + getUserArticle(): UserArticle
-            }
-
-            class ArticleDao {
-                + QueryParam getQueryParam()
-                + String create()
-                + Article update()
-                + List findAll()
-                + void delete()
-            }
-
-            class FeedDao {
-                + QueryParam getQueryParam()
-                + Feed getByRssUrl()
-                + String create()
-                + void delete()
-                + Feed getByRssUrl()
-                + Feed update()
-            }
-            
-            class FeedSynchronizationDao {
-                + void create()
-                + void deleteOldFeedSynchronization()
-                + List findByFeedId()
-            }
-
-            ' DAO for managing FeedSubscription data.
-            class FeedSubscriptionDao {
-                + void update()
-                + void reorder()
-                + void delete()
-                + String create()
-                + void reorder()
-                + void updateUnreadCount()
-                + FeedSubscription getFeedSubscription()
-            }
-
-            package "dto"{
-                ' Data Transfer Object for displaying user-article information.
-                class UserArticleDto {
-                    - id: String
-                    - readTimestamp: Long
-                    - starTimestamp: Long
-                    - feedTitle: String
-                    - feedSubscriptionId: String
-                    - feedSubscriptionTitle: String
-                    - articleId: String
-                    - articleGuid: String
-                    - articleTitle: String
-                    - articleCreator: String
-                    - articleCommentUrl: String
-                    - articleCommentCount: Integer
-                    - articleEnclosureUrl: String
-                    - articleEnclosureType: String
-                    - articlePublicationTimestamp: Long
-                }
-            }
-
-            package "criteria" {
-                ' Criteria used to filter or search user articles.
-                class UserArticleCriteria {
-                    - userId: String
-                    - feedId: String
-                    - visible: boolean
-                    - subscribed: boolean
-                    - feedSubscriptionId: String
-                    - categoryId: String
-                    - unread: boolean
-                    - starred: boolean
-                    - articleId: String
-                    - articleIdIn: List
-                    - userArticleId: String
-                    - articlePublicationDateMax: Date
-                    - userArticleStarredDateMax: Date
-                    - userArticleIdMax: String
-                    - fetchAllFeedSubscription: boolean
-                }
-            }
+        class ArticleResource {
+            + read() : Response
+            + readMultiple() : Response
+            + unread() : Response
+            + unreadMultiple() : Response
+        }
+        note right of ArticleResource
+            ArticleResource is extended by baseResource.
+        end note
+        
+        class StarredResource {
+            + get() : Response
+            + star() : Response
+            + unstar() : Response
+            + starMultiple() : Response
+            + unstarMultiple() : Response
         }
 
-        package "model" {
-            ' ----- ARTICLE & USER-RELATED CLASSES -----
+        class CategoryResource {
+            + list() : Response
+            + get() : Response
+            + add() : Response
+            + delete() : Response
+            + read() : Response
+            + update() : Response
+        }
 
-            class Article {
+        class SearchResource {
+            + get() : Response
+        }
+
+        ' AllResource --|> BaseResource
+        ArticleResource --|> BaseResource
+        ' StarredResource --|> BaseResource
+        ' CategoryResource --|> BaseResource
+        ' SearchResource --|> BaseResource
+    }
+    note bottom of rest_resource
+        REST resources are used to handle HTTP requests and responses.
+        They interact with the DAO layer to perform operations.
+    end note
+
+    '-------------------------------
+    ' DATA ACCESS OBJECTS (DAO)
+    '-------------------------------
+    package "DAO" {
+        class CategoryDao {
+            + getRootCategory() : Category
+            + getCategory() : Category
+            + getCategoryCount() : int
+            + create() : String
+            + update() : void
+            + delete() : void
+            + reorder() : void
+        }
+
+        class UserArticleDao {
+            + create() : String
+            + update() : UserArticle
+            + markAsRead() : void
+            + delete() : void
+            + getUserArticle() : UserArticle
+        }
+
+        class ArticleDao {
+            + QueryParam getQueryParam()
+            + create() : String
+            + update() : Article
+            + findAll() : List
+            + delete() : void
+        }
+
+        class FeedDao {
+            + QueryParam getQueryParam()
+            + getByRssUrl() : Feed
+            + create() : String
+            + delete() : void
+            + update() : Feed
+        }
+        
+        class FeedSynchronizationDao {
+            + create() : void
+            + deleteOldFeedSynchronization() : void
+            + findByFeedId() : List
+        }
+
+        class FeedSubscriptionDao {
+            + update() : void
+            + reorder() : void
+            + delete() : void
+            + create() : String
+            + updateUnreadCount() : void
+            + getFeedSubscription() : FeedSubscription
+        }
+        note right of FeedSubscriptionDao
+            FeedSubscriptionDao is responsible for managing 
+            the subscription of feeds by users.
+            it's uses entity and criteria classes to manage.
+            Similiare for all other DAO classes.
+        end note
+        
+        '-------------------------------
+        ' DTOs
+        '-------------------------------
+        package "dto" {
+            class FeedSubscriptionDto {
+                - id : String
+                - feedId : String
+                - success : boolean
+                - message : String
+                - duration : Integer
+                - createDate : Date
+            }
+
+            class UserArticleDto {
+                - id: String
+                - readTimestamp: Long
+                - starTimestamp: Long
+                - feedTitle: String
+                - feedSubscriptionId: String
+                - feedSubscriptionTitle: String
+                - articleId: String
+                - articleGuid: String
+                - articleTitle: String
+                - articleCreator: String
+                - articleCommentUrl: String
+                - articleCommentCount: Integer
+                - articleEnclosureUrl: String
+                - articleEnclosureType: String
+                - articlePublicationTimestamp: Long
+            }
+
+            class ArticleDto {
                 - id: String
                 - feedId: String
                 - url: String
@@ -226,142 +230,274 @@ package "Feed Organization Subsystem" {
                 - deleteDate: Date
             }
 
-            ' Represents the user-specific view of an Article.
-            class UserArticle {
+            class FeedDto {
                 - id: String
-                - userId: String
-                - articleId: String
-                - createDate: Date
-                - readDate: Date
-                - starredDate: Date
-                - deleteDate: Date
-                + toString(): String
+                - rssUrl: String
+                - url: String
+                - baseUri: String
+                - title: String
             }
-
-            ' ----- ORGANIZATION / FOLDERING CLASSES -----
-
-            ' Represents a folder or category for grouping feeds or articles.
-            class Category {
-                - id: String
-                - name: String
-                - userId: String
-                - parentId: String
-                - order: int
-                - folded: boolean
-                - createDate: Date
-                - deleteDate: Date
-            }
-
-            ' Represents a user’s subscription to a feed along with its folder (category) assignment.
-            class FeedSubscription {
-                - id: String
+        }
+        
+        '-------------------------------
+        ' Criteria
+        '-------------------------------
+        package "criteria" {
+            class FeedSubscriptionCriteria {
                 - userId: String
                 - feedId: String
                 - categoryId: String
-                - title: String
-                - order: int
                 - unreadCount: int
-                - createDate: Date
-                - deleteDate: Date
             }
 
-            class FeedSynchronization {
-                - id : String 
-                - feedId : String 
-                - success : boolean
-                - message : String 
-                - duration : Integer 
-                - createDate : Date
+            class UserArticleCriteria {
+                - userId: String
+                - feedId: String
+                - visible: boolean
+                - subscribed: boolean
+                - feedSubscriptionId: String
+                - categoryId: String
+                - unread: boolean
+                - starred: boolean
+                - articleId: String
+                - articleIdIn: List
+                - userArticleId: String
+                - articlePublicationDateMax: Date
+                - userArticleStarredDateMax: Date
+                - userArticleIdMax: String
+                - fetchAllFeedSubscription: boolean
             }
 
-            ' ----- FEED CLASSES -----
-            class Feed {
-                - String id
-                - String rssUrl
-                - String url
-                - String baseUri
-                - String title
-                - String language
-                - String description
-                - Date createDate
-                - Date lastFetchDate
-                - Date deleteDate
-            }
-        }
-
-        ' ----- Service FUNCTIONALITY -----
-        package "Service" {
-            ' Service that encapsulates search/indexing capabilities for articles.
-            class IndexingService {
-                - log: Logger
-                - directory: Directory
-                - directoryReader: DirectoryReader
-                - luceneStorageConfig: String
-                + searchArticles(): PaginatedList
-                + rebuildIndex(): void
-                + getDirectoryReader(): DirectoryReader
+            class ArticleCriteria {
+                - feedId: String
+                - feedSubscriptionId: String
+                - categoryId: String
+                - unread: boolean
+                - starred: boolean
+                - articleId: String
+                - articleIdIn: List
+                - articlePublicationDateMax: Date
+                - articleIdMax: String
+                - fetchAllFeedSubscription: boolean
             }
 
-            class FeedService {
-                + void synchronizeAllFeeds()
-                + Feed synchronize()
-                + void createInitialUserArticle()
-                - boolean isFaviconUpdated()
-                - RssReader parseFeedOrPage()
-                - void logParsingError()
-                - void completeArticleList()
-                - List getArticleToRemove()
-                - List getNewerArticleList()
-                - Article getOldestArticle()
+            class FeedCriteria {
+                - rssUrl: String
+                - url: String
+                - baseUri: String
+                - title: String
             }
         }
+    }
+    
+    package "util"{
+        abstract class BaseDao {
+            + void findByCriteria()
+            + List findByCriteria()
+            + T findFirstByCriteria()
+            # QueryParam getQueryParam()
+        }
+        note right of BaseDao
+            Base class for all DAO classes and It's is responsible for managing POJO classe. 
+            BaseDao takes <T, C>, where:
+            T: Data transer entity that acts as container for moving Data.
+            C: Criteria type used to specify the search or filter conditions for queries
+        end note
+    }
 
-        ' ----- RELATIONSHIPS -----
+    '-------------------------------
+    ' SERVICES
+    '-------------------------------
+    package "Service" {
+        class IndexingService {
+            - log: Logger
+            - directory: Directory
+            - directoryReader: DirectoryReader
+            - luceneStorageConfig: String
+            + searchArticles() : PaginatedList
+            + rebuildIndex() : void
+            + getDirectoryReader() : DirectoryReader
+        }
+        note bottom of IndexingService
+            IndexingService is responsible for building 
+            and maintaining a search index for articles.
+        end note
 
-        ' FeedService uses the DAO layer to perform operations.
-        FeedDao --> Feed
-
-        ' A UserArticle is linked to one Article.
-        UserArticle --> "1" Article : references
-
-        ' The UserArticleDao operates on UserArticle and uses search criteria.
-        UserArticleDao --> UserArticle
-        UserArticleDao --> UserArticleCriteria
-        UserArticleDao --> UserArticleDto
-
-        ' The ArticleDao operates on Article and uses search criteria.
-        ArticleDao --> Article
-
-        ' Categories are managed by CategoryDao.
-        CategoryDao --> Category
-
-        ' Feed subscriptions (which may determine folder placement) are managed via FeedSubscriptionDao.
-        FeedSubscriptionDao --> FeedSubscription
-        FeedSubscription --> Category : "belongs to" 
-
-        ' FeedSynchronizationDao uses the FeedSynchronization entity
-        FeedSynchronizationDao --> FeedSynchronization
-
-        ' IndexingService uses the DAO layer to perform searches.
-        IndexingService --> UserArticleDao
-        IndexingService --> ArticleDao
-
-        ' ----- REST RESOURCE RELATIONSHIPS -----
-        ' Relationships between resources and DAOs:
-        AllResource --> UserArticleDao
-        AllResource --> FeedSubscriptionDao
-        ArticleResource --> UserArticleDao
-        ArticleResource --> ArticleDao
-        ArticleResource --> FeedSubscriptionDao
-        StarredResource --> UserArticleDao
-        CategoryResource --> CategoryDao
-        CategoryResource --> UserArticleDao
-
+        class FeedService {
+            + synchronizeAllFeeds() : void
+            + synchronize() : Feed
+            + createInitialUserArticle() : void
+            - isFaviconUpdated() : boolean
+            - parseFeedOrPage() : RssReader
+            - logParsingError() : void
+            - completeArticleList() : void
+            - getArticleToRemove() : List
+            - getNewerArticleList() : List
+            - getOldestArticle() : Article
+        }
+        note bottom of FeedService
+            FeedService is responsible for synchronizing 
+            feeds in predifined intervals, parsing articles, 
+            and updating the database.
+        end note
+        
+        ' Relationship: FeedService uses various DAO classes (omitted here for brevity)
         FeedService --> FeedDao 
         FeedService --> ArticleDao 
         FeedService --> UserArticleDao
         FeedService --> FeedSubscriptionDao
         FeedService --> FeedSynchronizationDao
+
+
+        IndexingService --> UserArticleDao
+        IndexingService --> ArticleDao
     }
+
+    '-------------------------------
+    ' MODEL (Domain Entities)
+    '-------------------------------
+    package "model" {
+        class Article {
+            - id: String
+            - feedId: String
+            - url: String
+            - baseUri: String
+            - guid: String
+            - title: String
+            - creator: String
+            - description: String
+            - commentUrl: String
+            - commentCount: Integer
+            - enclosureUrl: String
+            - enclosureLength: Integer
+            - enclosureType: String
+            - publicationDate: Date
+            - createDate: Date
+            - deleteDate: Date
+        }
+
+        class UserArticle {
+            - id: String
+            - userId: String
+            - articleId: String
+            - createDate: Date
+            - readDate: Date
+            - starredDate: Date
+            - deleteDate: Date
+            + toString() : String
+        }
+
+        class Category {
+            - id: String
+            - name: String
+            - userId: String
+            - parentId: String
+            - order: int
+            - folded: boolean
+            - createDate: Date
+            - deleteDate: Date
+        }
+
+        class FeedSubscription {
+            - id: String
+            - userId: String
+            - feedId: String
+            - categoryId: String
+            - title: String
+            - order: int
+            - unreadCount: int
+            - createDate: Date
+            - deleteDate: Date
+        }
+
+        class FeedSynchronization {
+            - id : String
+            - feedId : String
+            - success : boolean
+            - message : String
+            - duration : Integer
+            - createDate : Date
+        }
+
+        class Feed {
+            - id: String
+            - rssUrl: String
+            - url: String
+            - baseUri: String
+            - title: String
+            - language: String
+            - description: String
+            - createDate: Date
+            - lastFetchDate: Date
+            - deleteDate: Date
+        }
+    }
+    note bottom of model
+        Domain entities (POJO classes) are used to represent the data model.
+        They are used by the DAO layer to interact with the database.
+        These are simple Java objects that just hold data with properties (fields), getters, and setters
+    end note
+
+    '-------------------------------
+    ' APPLICATION CONTEXT
+    '-------------------------------
+    package "context" {
+        class AppContext {
+            - instance : AppContext
+            - eventBus : EventBus
+            - asyncEventBus : EventBus
+            - mailEventBus : EventBus
+            - importEventBus : EventBus
+            - feedService : FeedService
+            - indexingService : IndexingService
+            - asyncExecutorList : List
+            + getInstance() : AppContext
+            + getEventBus() : EventBus
+            + getAsyncEventBus() : EventBus
+            + getMailEventBus() : EventBus
+            + getImportEventBus() : EventBus
+            + getFeedService() : FeedService
+            + getIndexingService() : IndexingService
+            + waitForAsync() : void
+            - resetEventBus() : void
+            - newAsyncEventBus() : EventBus
+        }
+        
+        ' AppContext creates and starts FeedService and IndexingService
+        AppContext --> FeedService : creates & starts
+        AppContext --> IndexingService : creates & starts
+    }
+
+    '-------------------------------
+    ' RELATIONSHIPS BETWEEN DOMAIN CLASSES & DAOs / SERVICES
+    '-------------------------------
+    UserArticleDao --> UserArticle
+    ' UserArticleDao --> UserArticleCriteria
+    ' UserArticleDao --> UserArticleDto
+    ArticleDao --> Article
+    ' ArticleDao --> ArticleDto
+    ' ArticleDao --> ArticleCriteria
+    CategoryDao --> Category
+    FeedDao --> Feed
+    ' FeedDao --> FeedDto
+    ' FeedDao --> FeedCriteria
+    FeedSubscriptionDao --> FeedSubscription
+    FeedSubscriptionDao --> FeedSubscriptionDto
+    FeedSubscriptionDao --> FeedSubscriptionCriteria
+    FeedSynchronizationDao --> FeedSynchronization
+
+    '-------------------------------
+    ' REST RESOURCE RELATIONSHIPS
+    '-------------------------------
+    ' AllResource --> UserArticleDao 
+    AllResource --> FeedSubscriptionDao 
+    ' ArticleResource --> UserArticleDao 
+    ' ArticleResource --> ArticleDao 
+    ArticleResource --> FeedSubscriptionDao 
+    ' StarredResource --> UserArticleDao 
+    ' CategoryResource --> CategoryDao 
+    ' CategoryResource --> UserArticleDao 
+    SearchResource --> IndexingService : use Search Articles
 }
+
 @enduml
