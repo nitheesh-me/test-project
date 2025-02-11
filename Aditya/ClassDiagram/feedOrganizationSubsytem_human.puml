@@ -110,11 +110,11 @@ package "reader_core" {
             + get() : Response
         }
 
-        AllResource --|> BaseResource
+        ' AllResource --|> BaseResource
         ArticleResource --|> BaseResource
-        StarredResource --|> BaseResource
-        CategoryResource --|> BaseResource
-        SearchResource --|> BaseResource
+        ' StarredResource --|> BaseResource
+        ' CategoryResource --|> BaseResource
+        ' SearchResource --|> BaseResource
     }
     note bottom of rest_resource
         REST resources are used to handle HTTP requests and responses.
@@ -472,15 +472,15 @@ package "reader_core" {
     ' RELATIONSHIPS BETWEEN DOMAIN CLASSES & DAOs / SERVICES
     '-------------------------------
     UserArticleDao --> UserArticle
-    UserArticleDao --> UserArticleCriteria
-    UserArticleDao --> UserArticleDto
+    ' UserArticleDao --> UserArticleCriteria
+    ' UserArticleDao --> UserArticleDto
     ArticleDao --> Article
-    ArticleDao --> ArticleDto
-    ArticleDao --> ArticleCriteria
+    ' ArticleDao --> ArticleDto
+    ' ArticleDao --> ArticleCriteria
     CategoryDao --> Category
     FeedDao --> Feed
-    FeedDao --> FeedDto
-    FeedDao --> FeedCriteria
+    ' FeedDao --> FeedDto
+    ' FeedDao --> FeedCriteria
     FeedSubscriptionDao --> FeedSubscription
     FeedSubscriptionDao --> FeedSubscriptionDto
     FeedSubscriptionDao --> FeedSubscriptionCriteria
@@ -489,14 +489,14 @@ package "reader_core" {
     '-------------------------------
     ' REST RESOURCE RELATIONSHIPS
     '-------------------------------
-    AllResource --> UserArticleDao 
+    ' AllResource --> UserArticleDao 
     AllResource --> FeedSubscriptionDao 
-    ArticleResource --> UserArticleDao 
-    ArticleResource --> ArticleDao 
+    ' ArticleResource --> UserArticleDao 
+    ' ArticleResource --> ArticleDao 
     ArticleResource --> FeedSubscriptionDao 
-    StarredResource --> UserArticleDao 
-    CategoryResource --> CategoryDao 
-    CategoryResource --> UserArticleDao 
+    ' StarredResource --> UserArticleDao 
+    ' CategoryResource --> CategoryDao 
+    ' CategoryResource --> UserArticleDao 
     SearchResource --> IndexingService : use Search Articles
 }
 
