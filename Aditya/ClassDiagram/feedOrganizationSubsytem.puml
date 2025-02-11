@@ -287,6 +287,22 @@ package "reader_core" {
                 - baseUri: String
                 - title: String
             }
+
+            class FilterCriteria {
+                - filterColumnList: List<FilterColumn>
+            }
+
+            class SortCriteria {
+                - column: int
+                - asc: boolean
+                - sortQuery: String
+            }
+
+            note bottom of SortCriteria
+                SortCriteria and FilterCriteria are used by all DAOs to handle sorting and 
+                filtering on queries. This logic is encapsulated in QueryParams and handled 
+                through the corresponding mapper.
+            end note
         }
     }
     
