@@ -238,6 +238,28 @@ package "reader_core" {
                 - title: String
             }
         }
+
+        package "mapper" {
+            class FeedSubscriptionMapper {
+                + map(): FeedSubscriptionDto
+            }
+
+            class UserArticleMapper {
+                + map(): UserArticleDto
+            }
+
+            class ArticleMapper {
+                + map(): ArticleDto
+            }
+
+            class FeedMapper {
+                + map(): FeedDto
+            }
+        }
+        note bottom of mapper 
+            Mappers are used by QueryParams to map the result of a query to a DTO. 
+            These QueryParam objects are returned by getQueryParam() methods in DAO classes.
+        end note
         
         '-------------------------------
         ' Criteria
