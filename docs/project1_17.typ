@@ -2,7 +2,9 @@
 // Install Tinimist package in vscode (for preview)
 // `typst compile project1_17.typ project1_17.pdf` to compile the document
 #import "@preview/aio-studi-and-thesis:0.1.0": *
-// Manual: https://github.com/typst/packages/raw/main/packages/preview/aio-studi-and-thesis/0.1.0/docs/manual-en.pdf
+#import "@preview/gviz:0.1.0": *
+#show raw.where(lang: "dot-render"): it => render-image(it.text)
+// Manuals: https://github.com/typst/packages/raw/main/packages/preview/aio-studi-and-thesis/0.1.0/docs/manual-en.pdf
 
 #show: project.with(
   lang: "en",
@@ -38,7 +40,7 @@
       email: "nitheeshchandra.y@research.iiit.ac.in"
     ),
   ),
-  title: [Reverse Engineering and Refactoring of \ Rudra's Subscription Service (RSS)],
+  title: [Reverse Engineering and Refactoring of \ Rudra's Subscription Service],
   subtitle: "By Team - 17",
   cover-sheet: (
     cover-image:  image("./assets/iiith.png"),
@@ -216,4 +218,11 @@ Checkout content at #link("./prompts.md")[
   Prompts file
 ]
 
-== Appendix B: Additional UML Diagrams
+#page(width: 25cm, height: 150cm, margin:1em)[
+  == Appendix B: Additional UML Diagrams
+
+  #figure(
+    image("./UML/full.classdiagram.v0-manual.svg", height:98%),
+    caption: [UML before refactoring.],
+  ) <additional-uml>
+]
