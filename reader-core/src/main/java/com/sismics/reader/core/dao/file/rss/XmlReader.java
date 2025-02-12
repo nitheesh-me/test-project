@@ -50,55 +50,78 @@ public class XmlReader extends Reader {
      * @throws IOException If an I/O error occurs
      */
     public XmlReader(InputStream in, String defaultEnc) throws IOException {
-        // Read ahead four bytes and check for BOM marks. Extra bytes are unread
-        // back to the stream; only BOM bytes are skipped.
+        String encoding = detectEncoding(in, defaultEnc);
+        internalInputStreamReader = new InputStreamReader(new PushbackInputStream(in, HEADER_SIZE), encoding);
+    }
+
+    private String detectEncoding(InputStream in, String defaultEnc) throws IOException {
+        byte[] header = new byte[HEADER_SIZE];
+        int n = ByteStreams.read(in, header, 0, header.length);
+        int unread;
         String encoding = defaultEnc;
-        byte header[] = new byte[HEADER_SIZE];
-        int n, unread;
 
-        
-        PushbackInputStream pushbackStream = new PushbackInputStream(in, HEADER_SIZE);
-        n = ByteStreams.read(in, header, 0, header.length);
-
-        if ((header[0] == (byte) 0xEF) && (header[1] == (byte) 0xBB) && (header[2] == (byte) 0xBF)) {
+        if (isUtf8Bom(header)) {
             encoding = "UTF-8";
             unread = n - 3;
-        } else if ((header[0] == (byte) 0xFE) && (header[1] == (byte) 0xFF)) {
+        } else if (isUtf16BeBom(header)) {
             encoding = "UTF-16BE";
             unread = n - 2;
-        } else if ((header[0] == (byte) 0xFF) && (header[1] == (byte) 0xFE)) {
+        } else if (isUtf16LeBom(header)) {
             encoding = "UTF-16LE";
             unread = n - 2;
-        } else if ((header[0] == (byte) 0x00) && (header[1] == (byte) 0x00) && (header[2] == (byte) 0xFE) && (header[3] == (byte) 0xFF)) {
+        } else if (isUtf32BeBom(header)) {
             encoding = "UTF-32BE";
             unread = n - 4;
-        } else if ((header[0] == (byte) 0xFF) && (header[1] == (byte) 0xFE) && (header[2] == (byte) 0x00) && (header[3] == (byte) 0x00)) {
+        } else if (isUtf32LeBom(header)) {
             encoding = "UTF-32LE";
             unread = n - 4;
         } else {
-            // Unicode BOM mark not found, unread all bytes and search in the XML header
             unread = n;
-            Pattern pattern = Pattern.compile("encoding=\"(.*?)\"");
-            Matcher matcher = pattern.matcher(new String(header));
-            if (matcher.find()) {
-                String enc = matcher.group(1);
-                try {
-                    Charset.forName(enc);
-                    encoding = enc;
-                } catch (Exception e) {
-                    // Fallback to default encoding if the encoding in the XML header is invalid
-                }
-            }
-        }
-        
-        if (unread > 0) {
-            pushbackStream.unread(header, (n - unread), unread);
-        } else if (unread < -1) {
-            pushbackStream.unread(header, 0, 0);
+            encoding = detectEncodingFromXmlHeader(header, defaultEnc);
         }
 
-        // Use given encoding
-        internalInputStreamReader = new InputStreamReader(pushbackStream, encoding);
+        if (unread > 0) {
+            ((PushbackInputStream) in).unread(header, (n - unread), unread);
+        } else if (unread < -1) {
+            ((PushbackInputStream) in).unread(header, 0, 0);
+        }
+
+        return encoding;
+    }
+
+    private boolean isUtf8Bom(byte[] header) {
+        return header[0] == (byte) 0xEF && header[1] == (byte) 0xBB && header[2] == (byte) 0xBF;
+    }
+
+    private boolean isUtf16BeBom(byte[] header) {
+        return header[0] == (byte) 0xFE && header[1] == (byte) 0xFF;
+    }
+
+    private boolean isUtf16LeBom(byte[] header) {
+        return header[0] == (byte) 0xFF && header[1] == (byte) 0xFE;
+    }
+
+    private boolean isUtf32BeBom(byte[] header) {
+        return header[0] == (byte) 0x00 && header[1] == (byte) 0x00 && header[2] == (byte) 0xFE && header[3] == (byte) 0xFF;
+    }
+
+    private boolean isUtf32LeBom(byte[] header) {
+        return header[0] == (byte) 0xFF && header[1] == (byte) 0xFE && header[2] == (byte) 0x00 && header[3] == (byte) 0x00;
+    }
+
+    private String detectEncodingFromXmlHeader(byte[] header, String defaultEnc) {
+        Pattern pattern = Pattern.compile("encoding=\"(.*?)\"");
+        Matcher matcher = pattern.matcher(new String(header));
+        if (matcher.find()) {
+            String enc = matcher.group(1);
+            try {
+                Charset.forName(enc);
+                return enc;
+            } catch (Exception e) {
+                // Fallback to default encoding if the encoding in the XML header is invalid
+            }
+        }
+        return defaultEnc;
     }
 
     @Override

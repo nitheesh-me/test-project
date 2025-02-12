@@ -7,7 +7,7 @@ package "Reader_web" {
     ' article module: handles article initialization, state updates,
     ' building HTML elements, and sharing
     class "article" {
-        - String title 
+        - String title
         - String content
         - Date publishDate
         - boolean isRead
