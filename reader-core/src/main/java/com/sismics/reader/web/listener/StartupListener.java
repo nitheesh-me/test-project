@@ -6,9 +6,15 @@ import com.sismics.reader.core.model.context.AppContext;
 import com.sismics.reader.core.model.jpa.Config;
 import com.sismics.reader.core.service.FeedService;
 import com.sismics.reader.core.service.IndexingService;
+import com.sismics.reader.core.util.AsyncTaskManager;
+import com.sismics.reader.core.event.EventBusManager;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.util.concurrent.Executors;
+
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.EventBus;
 
 /**
  * Initializes application dependencies when the web app starts.
@@ -20,6 +26,10 @@ public class StartupListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
 
+        EventBusManager eventBusManager = new EventBusManager();
+        AsyncTaskManager asyncTaskManager = new AsyncTaskManager();
+        // EventBus asyncEventBus = new AsyncEventBus(Executors.newCachedThreadPool());
+
         // Initialize services with dependency injection
         feedService = new FeedService();
 
@@ -28,7 +38,7 @@ public class StartupListener implements ServletContextListener {
         indexingService = new IndexingService(luceneStorageConfig != null ? luceneStorageConfig.getValue() : null);
 
         // Initialize application context with dependencies
-        AppContext.initialize(feedService, indexingService);
+        AppContext.initialize(feedService, indexingService, eventBusManager, asyncTaskManager);
 
         // Start background tasks
         feedService.start();

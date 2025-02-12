@@ -119,7 +119,7 @@ public class UserResource extends BaseResource {
         // Raise a user creation event
         UserCreatedEvent userCreatedEvent = new UserCreatedEvent();
         userCreatedEvent.setUser(user);
-        AppContext.getInstance().getMailEventBus().post(userCreatedEvent);
+        AppContext.getInstance().getEventBusManager().getMailEventBus().post(userCreatedEvent);
 
         // Always return OK
         JSONObject response = new JSONObject();
@@ -207,7 +207,7 @@ public class UserResource extends BaseResource {
             // Raise a password updated event
             PasswordChangedEvent passwordChangedEvent = new PasswordChangedEvent();
             passwordChangedEvent.setUser(user);
-            AppContext.getInstance().getMailEventBus().post(passwordChangedEvent);
+            AppContext.getInstance().getEventBusManager().getMailEventBus().post(passwordChangedEvent);
         }
         
         // Always return "ok"
@@ -301,7 +301,7 @@ public class UserResource extends BaseResource {
             // Raise a password updated event
             PasswordChangedEvent passwordChangedEvent = new PasswordChangedEvent();
             passwordChangedEvent.setUser(user);
-            AppContext.getInstance().getMailEventBus().post(passwordChangedEvent);
+            AppContext.getInstance().getEventBusManager().getMailEventBus().post(passwordChangedEvent);
         }
         
         // Always return "ok"

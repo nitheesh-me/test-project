@@ -1,19 +1,9 @@
 package com.sismics.reader.core.model.context;
 
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
-import com.sismics.reader.core.listener.async.*;
-import com.sismics.reader.core.listener.sync.DeadEventListener;
 import com.sismics.reader.core.service.FeedService;
 import com.sismics.reader.core.service.IndexingService;
-import com.sismics.util.EnvironmentUtil;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import com.sismics.reader.core.util.AsyncTaskManager;
+import com.sismics.reader.core.event.EventBusManager;
 
 /**
  * Global application context.
@@ -27,26 +17,6 @@ public class AppContext {
     private static AppContext instance;
 
     /**
-     * Event bus.
-     */
-    private EventBus eventBus;
-    
-    /**
-     * Generic asynchronous event bus.
-     */
-    private EventBus asyncEventBus;
-
-    /**
-     * Asynchronous event bus for emails.
-     */
-    private EventBus mailEventBus;
-    
-    /**
-     * Asynchronous event bus for mass imports.
-     */
-    private EventBus importEventBus;
-
-    /**
      * Feed service.
      */
     private FeedService feedService;
@@ -57,52 +27,34 @@ public class AppContext {
     private IndexingService indexingService;
 
     /**
-     * Asynchronous executors.
+     * Event Bus Manager
      */
-    private List<ExecutorService> asyncExecutorList;
-    
+    private EventBusManager eventBusManager;
+
+    /**
+     * Async Task Manager
+     */
+    private AsyncTaskManager asyncTaskManager;
+
     /**
      * Private constructor.
      */
-    private AppContext(FeedService feedService, IndexingService indexingService) {
-        resetEventBus();
-        
+    private AppContext(FeedService feedService, IndexingService indexingService, EventBusManager eventBusManager, AsyncTaskManager asyncTaskManager) {
         this.feedService = feedService;
         this.indexingService = indexingService;
+        this.eventBusManager = eventBusManager;
+        this.asyncTaskManager = asyncTaskManager;
     }
     
-    /**
-     * (Re)-initializes the event buses.
-     */
-    private void resetEventBus() {
-        eventBus = new EventBus();
-        eventBus.register(new DeadEventListener());
-        
-        asyncExecutorList = new ArrayList<ExecutorService>();
-        
-        asyncEventBus = newAsyncEventBus();
-        asyncEventBus.register(new ArticleCreatedAsyncListener());
-        asyncEventBus.register(new ArticleUpdatedAsyncListener());
-        asyncEventBus.register(new ArticleDeletedAsyncListener());
-        asyncEventBus.register(new RebuildIndexAsyncListener());
-        asyncEventBus.register(new FaviconUpdateRequestedAsyncListener());
-
-        mailEventBus = newAsyncEventBus();
-
-        importEventBus = newAsyncEventBus();
-        importEventBus.register(new SubscriptionImportAsyncListener());
-    }
-
     /**
      * Initializes the application context with the given dependencies.
      * 
      * @param feedService Feed service
      * @param indexingService Indexing service
-     * @param asyncEventBus Asynchronous event bus
      */
-    public static void initialize(FeedService feedService, IndexingService indexingService) {
+    public static void initialize(FeedService feedService, IndexingService indexingService, EventBusManager eventBusManager, AsyncTaskManager asyncTaskManager) {
         if (instance == null) {
-            instance = new AppContext(feedService, indexingService);
+            instance = new AppContext(feedService, indexingService, eventBusManager, asyncTaskManager);
         }
     }
 
@@ -119,79 +71,12 @@ public class AppContext {
     }
     
     /**
-     * Wait for termination of all asynchronous events.
-     * /!\ Must be used only in unit tests and never a multi-user environment. 
-     */
-    public void waitForAsync() {
-        if (EnvironmentUtil.isUnitTest()) {
-            return;
-        }
-        try {
-            for (ExecutorService executor : asyncExecutorList) {
-                // Shutdown executor, don't accept any more tasks (can cause error with nested events)
-                try {
-                    executor.shutdown();
-                    executor.awaitTermination(60, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    // NOP
-                }
-            }
-        } finally {
-            resetEventBus();
-        }
-    }
-
-    /**
-     * Creates a new asynchronous event bus.
-     * 
-     * @return Async event bus
-     */
-    private EventBus newAsyncEventBus() {
-        if (EnvironmentUtil.isUnitTest()) {
-            return new EventBus();
-        } else {
-            ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1,
-                    0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>());
-            asyncExecutorList.add(executor);
-            return new AsyncEventBus(executor);
-        }
-    }
-
-    /**
-     * Getter of eventBus.
+     * Getter of eventBusManager.
      *
-     * @return eventBus
+     * @return eventBusManager
      */
-    public EventBus getEventBus() {
-        return eventBus;
-    }
-
-    /**
-     * Getter of asyncEventBus.
-     *
-     * @return asyncEventBus
-     */
-    public EventBus getAsyncEventBus() {
-        return asyncEventBus;
-    }
-
-    /**
-     * Getter of mailEventBus.
-     *
-     * @return mailEventBus
-     */
-    public EventBus getMailEventBus() {
-        return mailEventBus;
-    }
-
-    /**
-     * Getter of importEventBus.
-     *
-     * @return importEventBus
-     */
-    public EventBus getImportEventBus() {
-        return importEventBus;
+    public EventBusManager getEventBusManager() {
+        return eventBusManager;
     }
 
     /**
@@ -210,5 +95,12 @@ public class AppContext {
      */
     public IndexingService getIndexingService() {
         return indexingService;
+    }
+
+    /**
+     * wait for AsyncCompletion
+     */
+    public void waitForAsyncCompletion() {
+        asyncTaskManager.waitForAsyncCompletion();
     }
 }

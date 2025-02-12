@@ -477,7 +477,7 @@ public class SubscriptionImportAsyncListener {
             // Add new articles to the index
             ArticleCreatedAsyncEvent articleCreatedAsyncEvent = new ArticleCreatedAsyncEvent();
             articleCreatedAsyncEvent.setArticleList(Lists.newArrayList(article));
-            AppContext.getInstance().getAsyncEventBus().post(articleCreatedAsyncEvent);
+            AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleCreatedAsyncEvent);
         }
         
         // Check if the user is already subscribed to this article

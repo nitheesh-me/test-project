@@ -174,7 +174,7 @@ public class FeedService extends AbstractScheduledService {
             // Removed articles from index
             ArticleDeletedAsyncEvent articleDeletedAsyncEvent = new ArticleDeletedAsyncEvent();
             articleDeletedAsyncEvent.setArticleList(articleToRemove);
-            AppContext.getInstance().getAsyncEventBus().post(articleDeletedAsyncEvent);
+            AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleDeletedAsyncEvent);
         }
 
         // Create the feed if necessary (not created and currently in use by another user)
@@ -196,7 +196,7 @@ public class FeedService extends AbstractScheduledService {
             // Try to download the feed's favicon
             FaviconUpdateRequestedEvent faviconUpdateRequestedEvent = new FaviconUpdateRequestedEvent();
             faviconUpdateRequestedEvent.setFeed(feed);
-            AppContext.getInstance().getAsyncEventBus().post(faviconUpdateRequestedEvent);
+            AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(faviconUpdateRequestedEvent);
         } else {
             // Try to update the feed's favicon every week
             boolean updateFavicon = isFaviconUpdated(feed);
@@ -214,7 +214,7 @@ public class FeedService extends AbstractScheduledService {
             if (updateFavicon) {
                 FaviconUpdateRequestedEvent faviconUpdateRequestedEvent = new FaviconUpdateRequestedEvent();
                 faviconUpdateRequestedEvent.setFeed(feed);
-                AppContext.getInstance().getAsyncEventBus().post(faviconUpdateRequestedEvent);
+                AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(faviconUpdateRequestedEvent);
             }
         }
         
@@ -266,7 +266,7 @@ public class FeedService extends AbstractScheduledService {
             if (!articleUpdatedList.isEmpty()) {
                 ArticleUpdatedAsyncEvent articleUpdatedAsyncEvent = new ArticleUpdatedAsyncEvent();
                 articleUpdatedAsyncEvent.setArticleList(articleUpdatedList);
-                AppContext.getInstance().getAsyncEventBus().post(articleUpdatedAsyncEvent);
+                AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleUpdatedAsyncEvent);
             }
         }
         
@@ -304,7 +304,7 @@ public class FeedService extends AbstractScheduledService {
             // Add new articles to the index
             ArticleCreatedAsyncEvent articleCreatedAsyncEvent = new ArticleCreatedAsyncEvent();
             articleCreatedAsyncEvent.setArticleList(Lists.newArrayList(articleMap.values()));
-            AppContext.getInstance().getAsyncEventBus().post(articleCreatedAsyncEvent);
+            AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleCreatedAsyncEvent);
         }
 
         long endTime = System.currentTimeMillis();
