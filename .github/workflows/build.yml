@@ -36,4 +36,4 @@ jobs:
         env:
           SONAR_TOKEN: sqp_6850cd30e8cb93f475c0e602b31595ea4448faaa
           SONAR_HOST_URL: https://solid-krill-lenient.ngrok-free.app
-        run: mvn -DskipTests -B -X org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-dev -Dsonar.projectName='sismics-reader-dev'
+        run: mvn -B -X clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-dev -Dsonar.projectName='sismics-reader-dev'
