@@ -36,4 +36,4 @@ jobs:
         env:
           SONAR_TOKEN: sqp_6c244d3a96d901b3045ce06bc7416292559cf6be
           SONAR_HOST_URL: https://5b0e-14-139-82-6.ngrok-free.app/
-        run: mvn -skipTests -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-dev -Dsonar.projectName='sismics-reader-dev'
+        run: mvn -skipTests -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-dev -Dsonar.projectName='sismics-reader-dev'
