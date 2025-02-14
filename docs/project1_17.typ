@@ -9,29 +9,29 @@
 #show: project.with(
   lang: "en",
   authors: (
-    (
-      name: "Priyank N",
-      id: "",
+     (
+          name: "Sanket Adlak",
+          id: "2024204005",
+          address: "team-17 (P90)",
+          email: "sanket.adlak@students.iiit.ac.in"
+     ),
+     (
+      name: "Priyank Nagarnaik",
+      id: "2024204011",
       address: "team-17 (P90)",
-      email: "name@email.address"
+      email: "priyank.nagarnaik@students.iiit.ac.in"
     ),
     (
       name: "Aditya Singh Rathore",
-      id: "",
+      id: "2024204012",
       address: "team-17 (P90)",
       email: "name@email.address"
     ),
     (
       name: "Yash Sonkar",
-      id: "2024801002",
+      id: "2024801001",
       address: "team-17 (P90)",
-      email: "name@email.address"
-    ),
-    (
-      name: "Sanket Adlak",
-      id: "",
-      address: "team-17 (P90)",
-      email: "name@email.address"
+      email: "yash.sonkar@research.iiit.ac.in"
     ),
     (
       name: "Nitheesh Chandra",
