@@ -43,6 +43,10 @@
     <url-pattern>/api/*</url-pattern>
   </filter-mapping>
 
+  <listener>
+      <listener-class>com.sismics.reader.web.listener.StartupListener</listener-class>
+  </listener>
+
   <!-- Welcome files -->
   <welcome-file-list>
     <welcome-file>index.html</welcome-file>

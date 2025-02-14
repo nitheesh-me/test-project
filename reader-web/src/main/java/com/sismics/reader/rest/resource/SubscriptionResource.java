@@ -560,7 +560,7 @@ public class SubscriptionResource extends BaseResource {
             SubscriptionImportedEvent event = new SubscriptionImportedEvent();
             event.setUser(user);
             event.setImportFile(importFile);
-            AppContext.getInstance().getImportEventBus().post(event);
+            AppContext.getInstance().getEventBusManager().getImportEventBus().post(event);
 
             // Always return ok
             JSONObject response = new JSONObject();
