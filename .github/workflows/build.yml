@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - dev
+
+
+jobs:
+  code-smells:
+    name: Designate analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean compile
+      - name: Download DesigniteJava
+        run: wget "https://www.designite-tools.com/assets/DesigniteJava.jar"
+      - name: Analyze project with DesigniteJava
+        run: |
+          java -jar DesigniteJava.jar -ci -repo ${{ github.repository }} -pat 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 -o designite_output
+      - name: Upload DesigniteJava analysis results
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-artifact
+          path: designite_output
+      - name: Output artifact ID
+        run: echo "The artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}"
+
+  build:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu' # Alternative distribution options are available.
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build and analyze
+        env:
+          SONAR_TOKEN: sqp_6850cd30e8cb93f475c0e602b31595ea4448faaa
+          SONAR_HOST_URL: http://proxy.nitheesh.me:25270
+        run: mvn -pl '!reader-distribution-redhat,!reader-distribution-mac,!reader-distribution-windows' -B -X -Pprod verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-dev -Dsonar.projectName='sismics-reader-dev'

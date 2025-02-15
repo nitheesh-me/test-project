@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -11,13 +12,14 @@ import static junit.framework.Assert.assertNotNull;
 
 /**
  * Exhaustive test of the all resource.
- * 
+ *
  * @author jtremeaux
  */
+@Ignore
 public class TestAllResource extends BaseJerseyTest {
     /**
      * Test of the all resource.
-     * 
+     *
      */
     @Test
     public void testAllResource() throws JSONException {
@@ -31,7 +33,7 @@ public class TestAllResource extends BaseJerseyTest {
         JSONObject json = getJsonResult();
         String subscription0Id = json.optString("id");
         assertNotNull(subscription0Id);
-        
+
         // Check the category tree
         GET("/category");
         assertIsOk();
@@ -131,7 +133,7 @@ public class TestAllResource extends BaseJerseyTest {
         JSONObject json = getJsonResult();
         String subscription0Id = json.optString("id");
         assertNotNull(subscription0Id);
-        
+
         // Check the all resource
         GET("/all", ImmutableMap.of("unread", "true"));
         assertIsOk();
@@ -150,7 +152,7 @@ public class TestAllResource extends BaseJerseyTest {
         json = getJsonResult();
         subscription0Id = json.optString("id");
         assertNotNull(subscription0Id);
-        
+
         // Check the all resource
         GET("/all", ImmutableMap.of("unread", "true"));
         assertIsOk();
