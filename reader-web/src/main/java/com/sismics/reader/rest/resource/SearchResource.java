@@ -26,8 +26,8 @@ import java.util.List;
  */
 @Path("/search")
 public class SearchResource {
-    private AuthencticationService authHelper;
-    public SearchResource(@Context HttpServletRequest request) throws JSONException {
+    private final AuthencticationService authHelper;
+    public SearchResource(@Context HttpServletRequest request) {
         this.authHelper = new AuthencticationService(request);
     }
 

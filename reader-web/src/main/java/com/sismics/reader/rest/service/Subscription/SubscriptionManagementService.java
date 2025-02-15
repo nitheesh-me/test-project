@@ -30,9 +30,9 @@ public class SubscriptionManagementService
 
     private final FeedSubscriptionDao feedSubscriptionDao;
     private final CategoryDao categoryDao;
-    private FeedSubscriptionCriteria feedSubscriptionCriteria;
-    private FeedSubscription feedSubscription;
-    private AuthencticationService authencticationService;
+    private final FeedSubscriptionCriteria feedSubscriptionCriteria;
+    private final FeedSubscription feedSubscription;
+    private final AuthencticationService authencticationService;
 
     public SubscriptionManagementService(@Context HttpServletRequest request) {
          this.feedSubscriptionDao = new FeedSubscriptionDao();
@@ -199,8 +199,7 @@ public class SubscriptionManagementService
         feedSubscriptionDao.updateUnreadCount(feedSubscription.getId(), 0);
 
         // Always return ok
-        JSONObject response = new JSONObject();
-        return response;
+        return new JSONObject();
     }
 
 }

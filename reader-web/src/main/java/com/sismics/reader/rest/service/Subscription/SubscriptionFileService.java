@@ -2,26 +2,17 @@ package com.sismics.reader.rest.service.Subscription;
 
 import com.sismics.reader.core.dao.jpa.CategoryDao;
 import com.sismics.reader.core.dao.jpa.FeedSubscriptionDao;
-import com.sismics.reader.core.dao.jpa.UserArticleDao;
 import com.sismics.reader.core.dao.jpa.criteria.FeedSubscriptionCriteria;
 import com.sismics.reader.core.dao.jpa.criteria.UserArticleCriteria;
 import com.sismics.reader.core.dao.jpa.dto.FeedSubscriptionDto;
-import com.sismics.reader.core.dao.jpa.dto.UserArticleDto;
-import com.sismics.reader.core.model.jpa.Category;
 import com.sismics.reader.core.model.jpa.FeedSubscription;
 import com.sismics.reader.core.util.DirectoryUtil;
-import com.sismics.reader.core.util.jpa.PaginatedList;
-import com.sismics.reader.core.util.jpa.PaginatedLists;
-import com.sismics.reader.rest.assembler.ArticleAssembler;
 import com.sismics.reader.rest.service.Authentication.AuthencticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ServerException;
-import com.sismics.rest.util.JsonUtil;
 import com.sismics.security.IPrincipal;
 import com.sismics.util.MessageUtil;
-import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -33,8 +24,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class SubscriptionFileService {
@@ -42,18 +31,12 @@ public class SubscriptionFileService {
     private final FeedSubscriptionDao feedSubscriptionDao;
     private final IPrincipal principal;
     private final FeedSubscriptionCriteria feedSubscriptionCriteria;
-    private final UserArticleCriteria userArticleCriteria;
-    private final CategoryDao categoryDao;
-    private final UserArticleCriteria afterArticleCriteria;
 
     public SubscriptionFileService(@Context HttpServletRequest request) {
         feedSubscriptionDao = new FeedSubscriptionDao();
         AuthencticationService authService = new AuthencticationService(request);
         this.principal = authService.getPrincipal();
         this.feedSubscriptionCriteria = new FeedSubscriptionCriteria();
-        this.userArticleCriteria = new UserArticleCriteria();
-        this.categoryDao = new CategoryDao();
-        this.afterArticleCriteria = new UserArticleCriteria();
     }
 
     public File getFaviconFile(String id) throws JSONException {
@@ -66,10 +49,9 @@ public class SubscriptionFileService {
         // Get the favicon
         File faviconDirectory = DirectoryUtil.getFaviconDirectory();
         File[] matchingFiles = faviconDirectory.listFiles((dir, name) -> name.startsWith(feedSubscription.getFeedId()));
-        final File faviconFile = matchingFiles.length > 0 ?
+        return matchingFiles.length > 0 ?
                 matchingFiles[0] :
                 new File(getClass().getResource("/image/subscription.png").getFile());
-        return faviconFile;
     }
 
     public Document getOpmlDocument() throws JSONException {

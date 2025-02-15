@@ -38,7 +38,6 @@ public class AppResource  {
     private final AuthencticationService authService;
     public AppResource(@Context HttpServletRequest request) {
         this.authService = new AuthencticationService(request);
-        IPrincipal principal = authService.getPrincipal();
     }
 
     /**
@@ -88,7 +87,7 @@ public class AppResource  {
         // Get the memory appender
         Logger logger = Logger.getRootLogger();
         Appender appender = logger.getAppender("MEMORY");
-        if (appender == null || !(appender instanceof MemoryAppender)) {
+        if (!(appender instanceof MemoryAppender)) {
             throw new ServerException("ServerError", "MEMORY appender not configured");
         }
         MemoryAppender memoryAppender = (MemoryAppender) appender;

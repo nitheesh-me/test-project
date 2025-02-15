@@ -43,7 +43,7 @@ public class BaseResource {
      */
     protected boolean authenticate() {
         Principal principal = (Principal) request.getAttribute(SecurityFilter.PRINCIPAL_ATTRIBUTE);
-        if (principal != null && principal instanceof IPrincipal) {
+        if (principal instanceof IPrincipal) {
             this.principal = (IPrincipal) principal;
             return !this.principal.isAnonymous();
         } else {

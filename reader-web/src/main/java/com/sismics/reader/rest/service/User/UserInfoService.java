@@ -58,71 +58,80 @@ public class UserInfoService {
             }
         } else {
             response.put("anonymous", false);
-            User user = userDao.getById(principal.getId());
-            response.put("username", user.getUsername());
-            response.put("email", user.getEmail());
-            response.put("theme", user.getTheme());
-            response.put("locale", user.getLocaleId());
-            response.put("display_title_web", user.isDisplayTitleWeb());
-            response.put("display_title_mobile", user.isDisplayTitleMobile());
-            response.put("display_unread_web", user.isDisplayUnreadWeb());
-            response.put("display_unread_mobile", user.isDisplayUnreadMobile());
-            response.put("narrow_article", user.isNarrowArticle());
-            response.put("first_connection", user.isFirstConnection());
-            JSONArray baseFunctions = new JSONArray(((UserPrincipal) principal).getBaseFunctionSet());
-            response.put("base_functions", baseFunctions);
-            response.put("is_default_password", authService.hasBaseFunction(BaseFunction.ADMIN) && Constants.DEFAULT_ADMIN_PASSWORD.equals(user.getPassword()));
-
-
-            jobCriteria.setUserId(user.getId());
+            getUserData(principal, response);
             List<JobDto> jobList = jobDao.findByCriteria(jobCriteria);
             JSONArray jobs = new JSONArray();
-            for (JobDto job : jobList) {
-                JSONObject jobJson = new JSONObject();
-                jobJson.put("id", job.getId());
-                jobJson.put("name", job.getName());
-                jobJson.put("start_date", job.getStartTimestamp());
-                jobJson.put("end_date", job.getStartTimestamp());
 
-                JobEventCriteria jobEventCriteria = new JobEventCriteria()
-                        .setJobId(job.getId());
-                List<JobEventDto> jobEventList = jobEventDao.findByCriteria(jobEventCriteria);
-                int feedSuccess = 0;
-                int feedFailure = 0;
-                int starredSuccess = 0;
-                int starredFailure = 0;
-                for (JobEventDto jobEvent : jobEventList) {
-                    String name = jobEvent.getName();
-                    switch (name) {
-                        case Constants.JOB_EVENT_FEED_COUNT:
-                        jobJson.put("feed_total", Integer.valueOf(jobEvent.getValue()));
-                            break;
-                        case Constants.JOB_EVENT_STARRED_ARTICLED_COUNT:
-                        jobJson.put("starred_total", Integer.valueOf(jobEvent.getValue()));
-                            break;
-                        case Constants.JOB_EVENT_FEED_IMPORT_SUCCESS:
-                        feedSuccess++;
-                            break;
-                        case Constants.JOB_EVENT_FEED_IMPORT_FAILURE:
-                        feedFailure++;
-                            break;
-                        case Constants.JOB_EVENT_STARRED_ARTICLE_IMPORT_SUCCESS:
-                        starredSuccess++;
-                            break;
-                        case Constants.JOB_EVENT_STARRED_ARTICLE_IMPORT_FAILURE:
-                        starredFailure++;
-                            break;
-                    }
-                }
-                jobJson.put("feed_success", Integer.valueOf(feedSuccess));
-                jobJson.put("feed_failure", Integer.valueOf(feedFailure));
-                jobJson.put("starred_success", Integer.valueOf(starredSuccess));
-                jobJson.put("starred_failure", Integer.valueOf(starredFailure));
-                jobs.put(jobJson);
-            }
-            response.put("jobs", jobs);
+            getJobData(jobList, jobs, response);
         }
         return response;
+    }
+
+    private void getJobData(List<JobDto> jobList, JSONArray jobs, JSONObject response) throws JSONException {
+        for (JobDto job : jobList) {
+            JSONObject jobJson = new JSONObject();
+            jobJson.put("id", job.getId());
+            jobJson.put("name", job.getName());
+            jobJson.put("start_date", job.getStartTimestamp());
+            jobJson.put("end_date", job.getStartTimestamp());
+
+            JobEventCriteria jobEventCriteria = new JobEventCriteria()
+                    .setJobId(job.getId());
+            List<JobEventDto> jobEventList = jobEventDao.findByCriteria(jobEventCriteria);
+            int feedSuccess = 0;
+            int feedFailure = 0;
+            int starredSuccess = 0;
+            int starredFailure = 0;
+            for (JobEventDto jobEvent : jobEventList) {
+                String name = jobEvent.getName();
+                switch (name) {
+                    case Constants.JOB_EVENT_FEED_COUNT:
+                    jobJson.put("feed_total", Integer.valueOf(jobEvent.getValue()));
+                        break;
+                    case Constants.JOB_EVENT_STARRED_ARTICLED_COUNT:
+                    jobJson.put("starred_total", Integer.valueOf(jobEvent.getValue()));
+                        break;
+                    case Constants.JOB_EVENT_FEED_IMPORT_SUCCESS:
+                    feedSuccess++;
+                        break;
+                    case Constants.JOB_EVENT_FEED_IMPORT_FAILURE:
+                    feedFailure++;
+                        break;
+                    case Constants.JOB_EVENT_STARRED_ARTICLE_IMPORT_SUCCESS:
+                    starredSuccess++;
+                        break;
+                    case Constants.JOB_EVENT_STARRED_ARTICLE_IMPORT_FAILURE:
+                    starredFailure++;
+                        break;
+                }
+            }
+            jobJson.put("feed_success", Integer.valueOf(feedSuccess));
+            jobJson.put("feed_failure", Integer.valueOf(feedFailure));
+            jobJson.put("starred_success", Integer.valueOf(starredSuccess));
+            jobJson.put("starred_failure", Integer.valueOf(starredFailure));
+            jobs.put(jobJson);
+        }
+        response.put("jobs", jobs);
+    }
+
+    private void getUserData(IPrincipal principal, JSONObject response) throws JSONException {
+        User user = userDao.getById(principal.getId());
+        response.put("username", user.getUsername());
+        response.put("email", user.getEmail());
+        response.put("theme", user.getTheme());
+        response.put("locale", user.getLocaleId());
+        response.put("display_title_web", user.isDisplayTitleWeb());
+        response.put("display_title_mobile", user.isDisplayTitleMobile());
+        response.put("display_unread_web", user.isDisplayUnreadWeb());
+        response.put("display_unread_mobile", user.isDisplayUnreadMobile());
+        response.put("narrow_article", user.isNarrowArticle());
+        response.put("first_connection", user.isFirstConnection());
+        JSONArray baseFunctions = new JSONArray(((UserPrincipal) principal).getBaseFunctionSet());
+        response.put("base_functions", baseFunctions);
+        response.put("is_default_password", authService.hasBaseFunction(BaseFunction.ADMIN) && Constants.DEFAULT_ADMIN_PASSWORD.equals(user.getPassword()));
+
+
+        jobCriteria.setUserId(user.getId());
     }
 
 

@@ -69,12 +69,16 @@ public class SubscriptionResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(
             @QueryParam("unread") boolean unread) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        authenticate();
 
         JSONObject response = subscriptionFeedService.getSubsNCategories(unread);
         return Response.ok().entity(response).build();
+    }
+
+    private void authenticate() throws JSONException {
+        if (!authencticationService.authenticate()) {
+            throw new ForbiddenClientException();
+        }
     }
 
     /**
@@ -94,9 +98,7 @@ public class SubscriptionResource {
             @QueryParam("unread") boolean unread,
             @QueryParam("limit") Integer limit,
             @QueryParam("after_article") String afterArticle) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        authenticate();
 
         JSONObject response = subscriptionFeedService.getSubsNPage(id, unread, limit, afterArticle);
 
@@ -115,9 +117,7 @@ public class SubscriptionResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSynchronization(
             @PathParam("id") String id) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        authenticate();
 
         JSONObject response = subscriptionManagementService.syncSubscription(id);
 
@@ -136,10 +136,8 @@ public class SubscriptionResource {
     public Response add(
             @FormParam("url") String url,
             @FormParam("title") String title) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
-        
+        authenticate();
+
         // Validate input data
         ValidationUtil.validateRequired(url, "url");
         url = ValidationUtil.validateHttpUrl(url, "url");
@@ -166,10 +164,8 @@ public class SubscriptionResource {
             @FormParam("title") String title,
             @FormParam("category") String categoryId,
             @FormParam("order") Integer order) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
-        
+        authenticate();
+
         // Validate input data
         title = ValidationUtil.validateLength(title, "name", 1, 100, true);
 
@@ -188,9 +184,7 @@ public class SubscriptionResource {
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response favicon(
             @PathParam("id") String id) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        authenticate();
 
         final File faviconFile = subscriptionFileService.getFaviconFile(id);
 
@@ -212,9 +206,7 @@ public class SubscriptionResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response read(
             @PathParam("id") String id) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        authenticate();
 
         JSONObject response = subscriptionManagementService.markAllRead(id);
         response.put("status", "ok");
@@ -232,9 +224,7 @@ public class SubscriptionResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response delete(
             @PathParam("id") String id) throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        authenticate();
 
         JSONObject response = subscriptionManagementService.deleteSubscription(id);
         return Response.ok().entity(response).build();
@@ -298,9 +288,7 @@ public class SubscriptionResource {
     @Path("export")
     @Produces(MediaType.APPLICATION_XML)
     public Response export() throws JSONException {
-        if (!authencticationService.authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        authenticate();
 
         Document opmlDocument = subscriptionFileService.getOpmlDocument();
 

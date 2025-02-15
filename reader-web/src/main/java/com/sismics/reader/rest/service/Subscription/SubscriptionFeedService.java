@@ -131,8 +131,7 @@ public class SubscriptionFeedService {
                 .setUserId(principal.getId())
                 .setUnread(unread);
 
-        List<FeedSubscriptionDto> feedSubscriptionList = feedSubscriptionDao.findByCriteria(feedSubscriptionCriteria);
-        return feedSubscriptionList;
+        return feedSubscriptionDao.findByCriteria(feedSubscriptionCriteria);
     }
 
     public JSONObject getSubsNPage(String id, boolean unread, Integer limit, String afterArticle) throws JSONException {
@@ -180,8 +179,7 @@ public class SubscriptionFeedService {
         if (feedSubscriptionList.isEmpty()) {
             throw new ClientException("SubscriptionNotFound", MessageFormat.format("Subscription not found: {0}", id));
         }
-        FeedSubscriptionDto feedSubscription = feedSubscriptionList.iterator().next();
-        return feedSubscription;
+        return feedSubscriptionList.iterator().next();
     }
 
     private static JSONObject getResponse(FeedSubscriptionDto feedSubscription, PaginatedList<UserArticleDto> paginatedList) throws JSONException {

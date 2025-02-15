@@ -31,7 +31,7 @@ import java.util.List;
  */
 @Path("/article")
 public class ArticleResource  {
-    private AuthencticationService authHelper;
+    private final AuthencticationService authHelper;
     IPrincipal principal;
     public ArticleResource(@Context HttpServletRequest request) throws JSONException {
         this.authHelper = new AuthencticationService(request);
