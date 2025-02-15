@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - dev
+      - refactoring
 
 
 jobs:
@@ -62,4 +62,4 @@ jobs:
         env:
           SONAR_TOKEN: sqp_6850cd30e8cb93f475c0e602b31595ea4448faaa
           SONAR_HOST_URL: http://proxy.nitheesh.me:25270
-        run: mvn -pl '!reader-distribution-redhat,!reader-distribution-mac,!reader-distribution-windows' -B -X -Pprod verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-dev -Dsonar.projectName='sismics-reader-dev'
+        run: mvn -pl '!reader-distribution-redhat,!reader-distribution-mac,!reader-distribution-windows' -B -X -Pprod verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-refactoring -Dsonar.projectName='sismics-reader-refactoring'
