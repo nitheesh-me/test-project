@@ -9,12 +9,16 @@ import com.sismics.reader.core.dao.jpa.dto.UserArticleDto;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
+import com.sismics.reader.rest.service.Authentication.AuthencticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
+import com.sismics.security.IPrincipal;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.text.MessageFormat;
@@ -28,7 +32,13 @@ import java.util.List;
  * @author jtremeaux
  */
 @Path("/all")
-public class AllResource extends BaseResource {
+public class AllResource {
+    private AuthencticationService authService;
+
+    public AllResource(@Context HttpServletRequest request) {
+        authService = new AuthencticationService(request);
+    }
+
     /**
      * Returns all articles.
      * 
@@ -43,9 +53,10 @@ public class AllResource extends BaseResource {
             @QueryParam("unread") boolean unread,
             @QueryParam("limit") Integer limit,
             @QueryParam("after_article") String afterArticle) throws JSONException {
-        if (!authenticate()) {
+        if (!authService.authenticate()) {
             throw new ForbiddenClientException();
         }
+        IPrincipal principal = authService.getPrincipal();
 
         // Get the articles
         UserArticleDao userArticleDao = new UserArticleDao();
@@ -93,10 +104,11 @@ public class AllResource extends BaseResource {
     @Path("/read")
     @Produces(MediaType.APPLICATION_JSON)
     public Response read() throws JSONException {
-        if (!authenticate()) {
+        if (!authService.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authService.getPrincipal();
+
         // Marks all articles of this user as read
         UserArticleDao userArticleDao = new UserArticleDao();
         userArticleDao.markAsRead(new UserArticleCriteria()

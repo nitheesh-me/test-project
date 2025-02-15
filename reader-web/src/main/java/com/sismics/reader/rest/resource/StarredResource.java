@@ -7,12 +7,16 @@ import com.sismics.reader.core.model.jpa.UserArticle;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
+import com.sismics.reader.rest.service.Authentication.AuthencticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
+import com.sismics.security.IPrincipal;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.text.MessageFormat;
@@ -26,7 +30,7 @@ import java.util.List;
  * @author jtremeaux
  */
 @Path("/starred")
-public class StarredResource extends BaseResource {
+public class StarredResource {
     /**
      * Returns starred articles.
      *
@@ -34,14 +38,17 @@ public class StarredResource extends BaseResource {
      * @param afterArticle Start the list after this article
      * @return Response
      */
+    private AuthencticationService authHelper;
+    public StarredResource(@Context HttpServletRequest request) throws JSONException {
+        this.authHelper = new AuthencticationService(request);
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response get(
             @QueryParam("limit") Integer limit,
             @QueryParam("after_article") String afterArticle) throws JSONException {
-        if (!authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        IPrincipal principal = authHelper.getPrincipal();
 
         // Get the articles
         UserArticleDao userArticleDao = new UserArticleDao();
@@ -90,10 +97,10 @@ public class StarredResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response star(
             @PathParam("id") String id) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authHelper.getPrincipal();
         // Get the article
         UserArticleDao userArticleDao = new UserArticleDao();
         UserArticle userArticle = userArticleDao.getUserArticle(id, principal.getId());
@@ -125,10 +132,10 @@ public class StarredResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response unstar(
             @PathParam("id") String id) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authHelper.getPrincipal();
         // Get the article
         UserArticleDao userArticleDao = new UserArticleDao();
         UserArticle userArticle = userArticleDao.getUserArticle(id, principal.getId());
@@ -160,10 +167,10 @@ public class StarredResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response starMultiple(
             @FormParam("id") List<String> idList) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authHelper.getPrincipal();
         for (String id : idList) {
             // Get the article
             UserArticleDao userArticleDao = new UserArticleDao();
@@ -194,10 +201,10 @@ public class StarredResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response unstarMultiple(
             @FormParam("id") List<String> idList) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authHelper.getPrincipal();
         for (String id : idList) {
             // Get the article
             UserArticleDao userArticleDao = new UserArticleDao();

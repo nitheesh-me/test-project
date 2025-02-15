@@ -8,12 +8,16 @@ import com.sismics.reader.core.dao.jpa.criteria.FeedSubscriptionCriteria;
 import com.sismics.reader.core.dao.jpa.dto.ArticleDto;
 import com.sismics.reader.core.dao.jpa.dto.FeedSubscriptionDto;
 import com.sismics.reader.core.model.jpa.UserArticle;
+import com.sismics.reader.rest.service.Authentication.AuthencticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
+import com.sismics.security.IPrincipal;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.text.MessageFormat;
@@ -26,7 +30,13 @@ import java.util.List;
  * @author jtremeaux
  */
 @Path("/article")
-public class ArticleResource extends BaseResource {
+public class ArticleResource  {
+    private AuthencticationService authHelper;
+    IPrincipal principal;
+    public ArticleResource(@Context HttpServletRequest request) throws JSONException {
+        this.authHelper = new AuthencticationService(request);
+        principal = authHelper.getPrincipal();
+    }
     /**
      * Marks an article as read.
      * 
@@ -38,10 +48,10 @@ public class ArticleResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response read(
             @PathParam("id") String id) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+
         // Get the article
         UserArticleDao userArticleDao = new UserArticleDao();
         UserArticle userArticle = userArticleDao.getUserArticle(id, principal.getId());
@@ -83,7 +93,7 @@ public class ArticleResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response readMultiple(
             @FormParam("id") List<String> idList) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
         
@@ -130,7 +140,7 @@ public class ArticleResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response unread(
             @PathParam("id") String id) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
         
@@ -175,7 +185,7 @@ public class ArticleResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response unreadMultiple(
             @FormParam("id") List<String> idList) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
         

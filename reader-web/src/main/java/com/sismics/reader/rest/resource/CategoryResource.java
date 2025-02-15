@@ -12,14 +12,18 @@ import com.sismics.reader.core.model.jpa.FeedSubscription;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
+import com.sismics.reader.rest.service.Authentication.AuthencticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.rest.util.ValidationUtil;
+import com.sismics.security.IPrincipal;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import javax.persistence.NoResultException;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.text.MessageFormat;
@@ -33,7 +37,11 @@ import java.util.List;
  * @author jtremeaux
  */
 @Path("/category")
-public class CategoryResource extends BaseResource {
+public class CategoryResource {
+    private AuthencticationService authHelper;
+    public CategoryResource(@Context HttpServletRequest request) throws JSONException {
+        this.authHelper = new AuthencticationService(request);
+    }
     /**
      * Returns all categories.
      * 
@@ -42,10 +50,10 @@ public class CategoryResource extends BaseResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response list() throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authHelper.getPrincipal();
         // Get the root category
         CategoryDao categoryDao = new CategoryDao();
         Category rootCategory = categoryDao.getRootCategory(principal.getId());
@@ -91,9 +99,7 @@ public class CategoryResource extends BaseResource {
             @QueryParam("unread") boolean unread,
             @QueryParam("limit") Integer limit,
             @QueryParam("after_article") String afterArticle) throws JSONException {
-        if (!authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        IPrincipal principal = authHelper.getPrincipal();
         
         // Get the category
         CategoryDao categoryDao = new CategoryDao();
@@ -154,9 +160,7 @@ public class CategoryResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response add(
             @FormParam("name") String name) throws JSONException {
-        if (!authenticate()) {
-            throw new ForbiddenClientException();
-        }
+        IPrincipal principal = authHelper.getPrincipal();
         
         // Validate input data
         name = ValidationUtil.validateLength(name, "name", 1, 100, false);
@@ -192,10 +196,10 @@ public class CategoryResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response delete(
             @PathParam("id") String id) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-
+IPrincipal principal = authHelper.getPrincipal();
         // Get the category
         CategoryDao categoryDao = new CategoryDao();
         try {
@@ -234,10 +238,10 @@ public class CategoryResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response read(
             @PathParam("id") String id) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authHelper.getPrincipal();
         // Get the category
         Category category;
         try {
@@ -283,10 +287,10 @@ public class CategoryResource extends BaseResource {
             @FormParam("name") String name,
             @FormParam("order") Integer order,
             @FormParam("folded") Boolean folded) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
-        
+        IPrincipal principal = authHelper.getPrincipal();
         // Validate input data
         name = ValidationUtil.validateLength(name, "name", 1, 100, true);
         

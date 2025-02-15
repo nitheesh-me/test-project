@@ -5,8 +5,10 @@ import com.sismics.reader.core.util.ConfigUtil;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.constant.BaseFunction;
+import com.sismics.reader.rest.service.Authentication.AuthencticationService;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.rest.exception.ServerException;
+import com.sismics.security.IPrincipal;
 import com.sismics.util.NetworkUtil;
 import com.sismics.util.log4j.LogCriteria;
 import com.sismics.util.log4j.LogEntry;
@@ -17,7 +19,9 @@ import org.apache.log4j.Logger;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -30,7 +34,13 @@ import java.util.ResourceBundle;
  * @author jtremeaux
  */
 @Path("/app")
-public class AppResource extends BaseResource {
+public class AppResource  {
+    private final AuthencticationService authService;
+    public AppResource(@Context HttpServletRequest request) {
+        this.authService = new AuthencticationService(request);
+        IPrincipal principal = authService.getPrincipal();
+    }
+
     /**
      * Return the information about the application.
      * 
@@ -70,10 +80,10 @@ public class AppResource extends BaseResource {
             @QueryParam("message") String message,
             @QueryParam("limit") Integer limit,
             @QueryParam("offset") Integer offset) throws JSONException {
-        if (!authenticate()) {
+        if (!authService.authenticate()) {
             throw new ForbiddenClientException();
         }
-        checkBaseFunction(BaseFunction.ADMIN);
+        authService.checkBaseFunction(BaseFunction.ADMIN);
 
         // Get the memory appender
         Logger logger = Logger.getRootLogger();
@@ -116,10 +126,10 @@ public class AppResource extends BaseResource {
     @Path("batch/reindex")
     @Produces(MediaType.APPLICATION_JSON)
     public Response batchReindex() throws JSONException {
-        if (!authenticate()) {
+        if (!authService.authenticate()) {
             throw new ForbiddenClientException();
         }
-        checkBaseFunction(BaseFunction.ADMIN);
+        authService.checkBaseFunction(BaseFunction.ADMIN);
         
         JSONObject response = new JSONObject();
         try {
@@ -140,13 +150,13 @@ public class AppResource extends BaseResource {
     @Path("map_port")
     @Produces(MediaType.APPLICATION_JSON)
     public Response mapPort() throws JSONException {
-        if (!authenticate()) {
+        if (!authService.authenticate()) {
             throw new ForbiddenClientException();
         }
-        checkBaseFunction(BaseFunction.ADMIN);
+        authService.checkBaseFunction(BaseFunction.ADMIN);
         
         JSONObject response = new JSONObject();
-        if (!NetworkUtil.mapTcpPort(request.getServerPort())) {
+        if (!NetworkUtil.mapTcpPort(authService.getRequest().getServerPort())) {
             throw new ServerException("NetworkError", "Error mapping port using UPnP");
         }
         

@@ -5,13 +5,15 @@ import com.sismics.reader.core.model.context.AppContext;
 import com.sismics.reader.core.service.IndexingService;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
-import com.sismics.rest.exception.ForbiddenClientException;
+import com.sismics.reader.rest.service.Authentication.AuthencticationService;
 import com.sismics.rest.exception.ServerException;
 import com.sismics.rest.util.ValidationUtil;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -23,8 +25,12 @@ import java.util.List;
  * @author jtremeaux
  */
 @Path("/search")
-public class SearchResource extends BaseResource {
-    
+public class SearchResource {
+    private AuthencticationService authHelper;
+    public SearchResource(@Context HttpServletRequest request) throws JSONException {
+        this.authHelper = new AuthencticationService(request);
+    }
+
     /**
      * Returns articles matching a search query.
      * 
@@ -40,17 +46,13 @@ public class SearchResource extends BaseResource {
             @PathParam("query") String query,
             @QueryParam("limit") Integer limit,
             @QueryParam("offset") Integer offset) throws JSONException {
-        if (!authenticate()) {
-            throw new ForbiddenClientException();
-        }
-        
         ValidationUtil.validateRequired(query, "query");
         
         // Search in index
         IndexingService indexingService = AppContext.getInstance().getIndexingService();
         PaginatedList<UserArticleDto> paginatedList;
         try {
-            paginatedList = indexingService.searchArticles(principal.getId(), query, offset, limit);
+            paginatedList = indexingService.searchArticles(authHelper.getPrincipal().getId(), query, offset, limit);
         } catch (Exception e) {
             throw new ServerException("SearchError", "Error searching articles", e);
         }
