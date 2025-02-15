@@ -12,8 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn clean compile
       - name: Download DesigniteJava
         run: wget "https://www.designite-tools.com/assets/DesigniteJava.jar"
       - name: Analyze project with DesigniteJava
@@ -55,5 +61,5 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: sqp_6850cd30e8cb93f475c0e602b31595ea4448faaa
-          SONAR_HOST_URL: http://proxy.nitheesh.me:27923
+          SONAR_HOST_URL: http://proxy.nitheesh.me:25270
         run: mvn -B -X clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-dev -Dsonar.projectName='sismics-reader-dev'
