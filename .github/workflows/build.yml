@@ -7,10 +7,27 @@ on:
 
 
 jobs:
-  build:
-    name: Build and analyze
+  code-smells:
+    name: Designate analysis
     runs-on: ubuntu-latest
-    
+    steps:
+      - name: Run Designite analysis for the latest commit
+        id: designite
+        uses: DesigniteTools/DJAction@v2.0
+        with:
+          PAT: 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
+
+      - name: DesigniteJava incremental code quality analysis and issue creation
+        uses: DesigniteTools/dj-incremental-analysis@v1.0.0
+        with:
+          github-token: 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
+          designite-output-old: designite-output-${{ github.event.before }}
+          designite-output-new: designite-output-${{ github.sha }}
+          repo-name: ${{ github.repository }}
+  build:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
