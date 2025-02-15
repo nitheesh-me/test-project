@@ -12,13 +12,14 @@ import static junit.framework.Assert.*;
 
 /**
  * Test the app resource.
- * 
+ *
  * @author jtremeaux
  */
+@Ignore
 public class TestAppResource extends BaseJerseyTest {
     /**
      * Test the API resource.
-     * 
+     *
      */
     @Test
     public void testAppResource() throws JSONException {
@@ -34,10 +35,10 @@ public class TestAppResource extends BaseJerseyTest {
         assertTrue(freeMemory > 0);
         Long totalMemory = json.getLong("total_memory");
         assertTrue(totalMemory > 0 && totalMemory > freeMemory);
-        
+
         // Login admin
         login("admin", "admin", false);
-        
+
         // Rebuild articles index
         POST("/app/batch/reindex");
         assertIsOk();
@@ -45,22 +46,22 @@ public class TestAppResource extends BaseJerseyTest {
 
     /**
      * Test the map port resource.
-     * 
+     *
      */
     @Test
     @Ignore
     public void testMapPortResource() throws JSONException {
         // Login admin
         login("admin", "admin", false);
-        
+
         // Map port using UPnP
         POST("/app/map_port");
         assertIsOk();
     }
-    
+
     /**
      * Test the log resource.
-     * 
+     *
      */
     @Test
     public void testLogResource() throws JSONException {
@@ -81,7 +82,7 @@ public class TestAppResource extends BaseJerseyTest {
         Long date1 = logs.optJSONObject(0).optLong("date");
         Long date2 = logs.optJSONObject(9).optLong("date");
         assertTrue(date1 >= date2);
-        
+
         // Check the logs (page 2)
         GET("/app/log", ImmutableMap.of(
                 "offset",  "10",

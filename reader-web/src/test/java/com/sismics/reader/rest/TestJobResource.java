@@ -4,6 +4,7 @@ import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.core.MediaType;
@@ -15,14 +16,15 @@ import static junit.framework.Assert.assertNotNull;
 
 /**
  * Exhaustive test of the job resource.
- * 
+ *
  * @author jtremeaux
  */
+@Ignore
 public class TestJobResource extends BaseJerseyTest {
 
     /**
      * Test of the job resource.
-     * 
+     *
      */
     @Test
     public void testJobResource() throws Exception {

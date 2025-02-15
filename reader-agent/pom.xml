@@ -7,7 +7,7 @@
     <version>1.6-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  
+
   <modelVersion>4.0.0</modelVersion>
   <artifactId>reader-agent</artifactId>
   <packaging>jar</packaging>
@@ -17,18 +17,21 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
+      <version>8.1.9.v20130131</version>
     </dependency>
-    
+
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-webapp</artifactId>
+      <version>8.1.9.v20130131</version>
     </dependency>
-    
+
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
+      <version>8.1.9.v20130131</version>
     </dependency>
-    
+
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -39,7 +42,7 @@
       <artifactId>forms</artifactId>
     </dependency>
   </dependencies>
-  
+
   <build>
     <plugins>
       <plugin>

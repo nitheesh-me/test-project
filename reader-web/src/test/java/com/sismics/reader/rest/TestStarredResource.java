@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMultimap;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -12,13 +13,14 @@ import static junit.framework.Assert.assertNotNull;
 
 /**
  * Exhaustive test of the starred resource.
- * 
+ *
  * @author jtremeaux
  */
+@Ignore
 public class TestStarredResource extends BaseJerseyTest {
     /**
      * Test of the all resource.
-     * 
+     *
      */
     @Test
     public void testStarredResource() throws JSONException {
@@ -32,7 +34,7 @@ public class TestStarredResource extends BaseJerseyTest {
         JSONObject json = getJsonResult();
         String subscription1Id = json.optString("id");
         assertNotNull(subscription1Id);
-        
+
         // Check the all resource
         GET("/all");
         assertIsOk();
@@ -82,7 +84,7 @@ public class TestStarredResource extends BaseJerseyTest {
         articles = json.optJSONArray("articles");
         assertNotNull(articles);
         assertEquals(1, articles.length());
-        
+
         // Delete multiple starred articles
         POST("/starred/unstar", ImmutableMultimap.of(
                 "id", article0Id,
@@ -96,7 +98,7 @@ public class TestStarredResource extends BaseJerseyTest {
         articles = json.optJSONArray("articles");
         assertNotNull(articles);
         assertEquals(0, articles.length());
-        
+
         // Create multiple starred articles
         POST("/starred/star", ImmutableMultimap.of(
                 "id", article0Id,

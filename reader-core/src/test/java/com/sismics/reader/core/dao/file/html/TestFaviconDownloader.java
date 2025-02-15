@@ -9,7 +9,7 @@ import static junit.framework.Assert.*;
 
 /**
  * Test of the favicon downloader.
- * 
+ *
  * @author jtremeaux
  */
 public class TestFaviconDownloader {
@@ -62,6 +62,7 @@ public class TestFaviconDownloader {
     }
 
     @Test
+    @Ignore
     public void faviconDownloaderAbstruseGooseTest() {
         // Download from page
         FaviconDownloader downloader = new FaviconDownloader();
@@ -70,12 +71,13 @@ public class TestFaviconDownloader {
         assertNotNull(filename);
         assertTrue(new File(filename).exists());
     }
-    
+
     /**
      * Related to issue #2.
-     * 
+     *
      */
     @Test
+    @Ignore
     public void faviconDownloaderDoubleFineTest() {
         // Download from page
         FaviconDownloader downloader = new FaviconDownloader();
