@@ -15,11 +15,7 @@ import com.sismics.reader.core.dao.jpa.dto.ArticleDto;
 import com.sismics.reader.core.dao.jpa.dto.FeedDto;
 import com.sismics.reader.core.dao.jpa.dto.FeedSubscriptionDto;
 import com.sismics.reader.core.dao.jpa.dto.UserArticleDto;
-import com.sismics.reader.core.event.ArticleCreatedAsyncEvent;
-import com.sismics.reader.core.event.ArticleDeletedAsyncEvent;
-import com.sismics.reader.core.event.ArticleUpdatedAsyncEvent;
-import com.sismics.reader.core.event.FaviconUpdateRequestedEvent;
-import com.sismics.reader.core.model.context.AppContext;
+import com.sismics.reader.core.event.*;
 import com.sismics.reader.core.model.jpa.*;
 import com.sismics.reader.core.util.EntityManagerUtil;
 import com.sismics.reader.core.util.TransactionUtil;
@@ -52,11 +48,16 @@ import java.util.concurrent.TimeUnit;
  *
  * @author jtremeaux 
  */
-public class FeedService extends AbstractScheduledService {
+public class FeedService extends AbstractScheduledService implements IFeedService{
     /**
      * Logger.
      */
     private static final Logger log = LoggerFactory.getLogger(FeedService.class);
+
+    private final EventBusManager eventBusManager = new EventBusManager();
+
+    public FeedService() {
+    }
 
     @Override
     protected void startUp() throws Exception {
@@ -85,6 +86,7 @@ public class FeedService extends AbstractScheduledService {
     /**
      * Synchronize all feeds.
      */
+
     public void synchronizeAllFeeds() {
         // Update all feeds currently having subscribed users
         FeedDao feedDao = new FeedDao();
@@ -212,7 +214,7 @@ public class FeedService extends AbstractScheduledService {
     private void removeArticlesFromIndex(List<Article> articleToRemove) {
         ArticleDeletedAsyncEvent articleDeletedAsyncEvent = new ArticleDeletedAsyncEvent();
         articleDeletedAsyncEvent.setArticleList(articleToRemove);
-        AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleDeletedAsyncEvent);
+        eventBusManager.getAsyncEventBus().post(articleDeletedAsyncEvent);
     }
 
     /**
@@ -278,7 +280,7 @@ public class FeedService extends AbstractScheduledService {
     private void requestFaviconUpdate(Feed feed) {
         FaviconUpdateRequestedEvent event = new FaviconUpdateRequestedEvent();
         event.setFeed(feed);
-        AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(event);
+        eventBusManager.getAsyncEventBus().post(event);
     }
 
     /**
@@ -356,7 +358,7 @@ public class FeedService extends AbstractScheduledService {
     private void updateArticleIndex(List<Article> articleUpdatedList) {
         ArticleUpdatedAsyncEvent articleUpdatedAsyncEvent = new ArticleUpdatedAsyncEvent();
         articleUpdatedAsyncEvent.setArticleList(articleUpdatedList);
-        AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleUpdatedAsyncEvent);
+        eventBusManager.getAsyncEventBus().post(articleUpdatedAsyncEvent);
     }
 
     private void createNewArticles(Feed feed, Map<String, Article> articleMap) {
@@ -411,7 +413,7 @@ public class FeedService extends AbstractScheduledService {
     private void indexNewArticles(Map<String, Article> articleMap) {
         ArticleCreatedAsyncEvent articleCreatedAsyncEvent = new ArticleCreatedAsyncEvent();
         articleCreatedAsyncEvent.setArticleList(Lists.newArrayList(articleMap.values()));
-        AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleCreatedAsyncEvent);
+        eventBusManager.getAsyncEventBus().post(articleCreatedAsyncEvent);
     }
 
     private void logSyncResults(String url, long startTime, List<Article> articleList) {

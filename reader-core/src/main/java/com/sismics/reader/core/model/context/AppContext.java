@@ -1,6 +1,8 @@
 package com.sismics.reader.core.model.context;
 
 import com.sismics.reader.core.service.FeedService;
+import com.sismics.reader.core.service.IFeedService;
+import com.sismics.reader.core.service.IIndexingService;
 import com.sismics.reader.core.service.IndexingService;
 import com.sismics.reader.core.util.AsyncTaskManager;
 import com.sismics.reader.core.event.EventBusManager;
@@ -11,95 +13,90 @@ import com.sismics.reader.core.event.EventBusManager;
  * @author jtremeaux 
  */
 public class AppContext {
-    /**
-     * Singleton instance.
-     */
     private static AppContext instance;
+    private final IFeedService feedService;
+    private final IIndexingService indexingService;
+    private final EventBusManager eventBusManager;
+    private final AsyncTaskManager asyncTaskManager;
 
-    /**
-     * Feed service.
-     */
-    private FeedService feedService;
-    
-    /**
-     * Indexing service.
-     */
-    private IndexingService indexingService;
-
-    /**
-     * Event Bus Manager
-     */
-    private EventBusManager eventBusManager;
-
-    /**
-     * Async Task Manager
-     */
-    private AsyncTaskManager asyncTaskManager;
-
-    /**
-     * Private constructor.
-     */
-    private AppContext(FeedService feedService, IndexingService indexingService, EventBusManager eventBusManager, AsyncTaskManager asyncTaskManager) {
-        this.feedService = feedService;
-        this.indexingService = indexingService;
-        this.eventBusManager = eventBusManager;
-        this.asyncTaskManager = asyncTaskManager;
+    private AppContext(Builder builder) {
+        this.feedService = builder.feedService;
+        this.indexingService = builder.indexingService;
+        this.eventBusManager = builder.eventBusManager;
+        this.asyncTaskManager = builder.asyncTaskManager;
     }
-    
-    /**
-     * Initializes the application context with the given dependencies.
-     * 
-     * @param feedService Feed service
-     * @param indexingService Indexing service
-     */
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static void initialize(FeedService feedService, IndexingService indexingService, EventBusManager eventBusManager, AsyncTaskManager asyncTaskManager) {
         if (instance == null) {
-            instance = new AppContext(feedService, indexingService, eventBusManager, asyncTaskManager);
+            instance = builder()
+                .feedService(feedService)
+                .indexingService(indexingService)
+                .eventBusManager(eventBusManager)
+                .asyncTaskManager(asyncTaskManager)
+                .build();
         }
     }
 
-    /**
-     * Returns a single instance of the application context.
-     * 
-     * @return Application context
-     */
+    public static class Builder {
+        private IFeedService feedService;
+        private IIndexingService indexingService;
+        private EventBusManager eventBusManager;
+        private AsyncTaskManager asyncTaskManager;
+
+        public Builder feedService(FeedService feedService) {
+            this.feedService = feedService;
+            return this;
+        }
+
+        public Builder indexingService(IIndexingService indexingService) {
+            this.indexingService = indexingService;
+            return this;
+        }
+
+        public Builder eventBusManager(EventBusManager eventBusManager) {
+            this.eventBusManager = eventBusManager;
+            return this;
+        }
+
+        public Builder asyncTaskManager(AsyncTaskManager asyncTaskManager) {
+            this.asyncTaskManager = asyncTaskManager;
+            return this;
+        }
+
+        public AppContext build() {
+            return new AppContext(this);
+        }
+    }
+
+    public static void initialize(AppContext context) {
+        if (instance == null) {
+            instance = context;
+        }
+    }
+
     public static AppContext getInstance() {
         if (instance == null) {
             throw new IllegalStateException("AppContext has not been initialized");
         }
         return instance;
     }
-    
-    /**
-     * Getter of eventBusManager.
-     *
-     * @return eventBusManager
-     */
+
     public EventBusManager getEventBusManager() {
         return eventBusManager;
     }
 
-    /**
-     * Getter of feedService.
-     *
-     * @return feedService
-     */
-    public FeedService getFeedService() {
+    public IFeedService getFeedService() {
         return feedService;
     }
-    
-    /**
-     * Getter of indexingService.
-     *
-     * @return indexingService
-     */
-    public IndexingService getIndexingService() {
+
+    public IIndexingService getIndexingService() {
         return indexingService;
     }
 
-    /**
-     * wait for AsyncCompletion
-     */
     public void waitForAsyncCompletion() {
         asyncTaskManager.waitForAsyncCompletion();
     }

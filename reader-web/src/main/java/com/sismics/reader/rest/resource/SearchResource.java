@@ -2,6 +2,7 @@ package com.sismics.reader.rest.resource;
 
 import com.sismics.reader.core.dao.jpa.dto.UserArticleDto;
 import com.sismics.reader.core.model.context.AppContext;
+import com.sismics.reader.core.service.IIndexingService;
 import com.sismics.reader.core.service.IndexingService;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
@@ -49,7 +50,7 @@ public class SearchResource {
         ValidationUtil.validateRequired(query, "query");
         
         // Search in index
-        IndexingService indexingService = AppContext.getInstance().getIndexingService();
+        IIndexingService indexingService = AppContext.getInstance().getIndexingService();
         PaginatedList<UserArticleDto> paginatedList;
         try {
             paginatedList = indexingService.searchArticles(authHelper.getPrincipal().getId(), query, offset, limit);

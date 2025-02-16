@@ -7,8 +7,8 @@ import com.sismics.reader.core.dao.jpa.UserArticleDao;
 import com.sismics.reader.core.dao.jpa.criteria.UserArticleCriteria;
 import com.sismics.reader.core.dao.jpa.dto.UserArticleDto;
 import com.sismics.reader.core.dao.lucene.ArticleDao;
+import com.sismics.reader.core.event.EventBusManager;
 import com.sismics.reader.core.event.RebuildIndexAsyncEvent;
-import com.sismics.reader.core.model.context.AppContext;
 import com.sismics.reader.core.model.jpa.Article;
 import com.sismics.reader.core.model.jpa.UserArticle;
 import com.sismics.reader.core.util.DirectoryUtil;
@@ -35,46 +35,43 @@ import java.util.concurrent.TimeUnit;
  *
  * @author bgamard
  */
-public class IndexingService extends AbstractScheduledService {
+public class IndexingService extends AbstractScheduledService implements IIndexingService {
     /**
      * Logger.
      */
     private static final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
-    /**
-     * Lucene directory.
-     */
-    private Directory directory;
-    
-    /**
-     * Index reader.
-     */
+    private final Directory directory;
     private DirectoryReader directoryReader;
-    
-    /**
-     * Lucene storage config.
-     */
-    private String luceneStorageConfig;
-    
+    private final EventBusManager eventBusManager = new EventBusManager();
+    private final String luceneStorageConfig;
+
     public IndexingService(String luceneStorageConfig) {
         this.luceneStorageConfig = luceneStorageConfig;
+        this.directory = initializeDirectory();
     }
 
-    @Override
-    protected void startUp() {
+    private Directory initializeDirectory() {
         // RAM directory storage by default
         if (luceneStorageConfig == null || luceneStorageConfig.equals(Constants.LUCENE_DIRECTORY_STORAGE_RAM)) {
-            directory = new RAMDirectory();
             log.info("Using RAM Lucene storage");
+            return new RAMDirectory();
         } else if (luceneStorageConfig.equals(Constants.LUCENE_DIRECTORY_STORAGE_FILE)) {
             File luceneDirectory = DirectoryUtil.getLuceneDirectory();
             log.info("Using file Lucene storage: {}", luceneDirectory);
             try {
-                directory = new SimpleFSDirectory(luceneDirectory, new SimpleFSLockFactory());
+                return new SimpleFSDirectory(luceneDirectory, new SimpleFSLockFactory());
             } catch (IOException e) {
                 log.error("Error initializing Lucene index", e);
+                return new RAMDirectory(); // Fallback to RAM
             }
         }
+        return new RAMDirectory(); // Default to RAM
+    }
+
+    @Override
+    protected void startUp() {
+        // NOP
     }
 
     @Override
@@ -168,7 +165,7 @@ public class IndexingService extends AbstractScheduledService {
      */
     public void rebuildIndex() throws Exception {
         RebuildIndexAsyncEvent rebuildIndexAsyncEvent = new RebuildIndexAsyncEvent();
-        AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(rebuildIndexAsyncEvent);
+        eventBusManager.getAsyncEventBus().post(rebuildIndexAsyncEvent);
     }
 
     /**
@@ -212,3 +209,4 @@ public class IndexingService extends AbstractScheduledService {
         return directoryReader;
     }
 }
+

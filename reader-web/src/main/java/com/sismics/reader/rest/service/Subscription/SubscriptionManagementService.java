@@ -10,6 +10,7 @@ import com.sismics.reader.core.model.jpa.Feed;
 import com.sismics.reader.core.model.jpa.FeedSubscription;
 import com.sismics.reader.core.model.jpa.FeedSynchronization;
 import com.sismics.reader.core.service.FeedService;
+import com.sismics.reader.core.service.IFeedService;
 import com.sismics.reader.core.util.EntityManagerUtil;
 import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
@@ -88,7 +89,7 @@ public class SubscriptionManagementService
 
         // Get feed and articles
         Feed feed;
-        final FeedService feedService = AppContext.getInstance().getFeedService();
+        final IFeedService feedService = AppContext.getInstance().getFeedService();
         try {
             feed = feedService.synchronize(url);
         } catch (Exception e) {
