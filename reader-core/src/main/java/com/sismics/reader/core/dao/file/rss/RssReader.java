@@ -36,7 +36,7 @@ public class RssReader extends DefaultHandler {
     /**
      * A list of common date formats used in RSS feeds.
      */
-    public static final DateTimeFormatter DF_RSS = new DateTimeFormatterBuilder()
+    private static final DateTimeFormatter DF_RSS = new DateTimeFormatterBuilder()
             .append(null, new DateTimeParser[] {
                     DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm zzz").getParser(),
                     DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z").getParser(),
@@ -52,7 +52,7 @@ public class RssReader extends DefaultHandler {
     /**
      * A list of common date formats used in Atom feeds.
      */
-    public static final DateTimeFormatter DF_ATOM = new DateTimeFormatterBuilder()
+    private static final DateTimeFormatter DF_ATOM = new DateTimeFormatterBuilder()
             .append(null, new DateTimeParser[] {
                     DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ").getParser(),
                     DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").getParser()
@@ -61,12 +61,22 @@ public class RssReader extends DefaultHandler {
     /**
      * A list of common date formats used in Dublin Core.
      */
-    public static final DateTimeFormatter DF_DC = new DateTimeFormatterBuilder()
+    private static final DateTimeFormatter DF_DC = new DateTimeFormatterBuilder()
             .append(null, new DateTimeParser[] {
                     DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ").getParser(),
                     DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").getParser()
                 }).toFormatter().withOffsetParsed().withLocale(Locale.ENGLISH);
+    public static DateTimeFormatter getDfRss() {
+        return DF_RSS;
+    }
 
+    public static DateTimeFormatter getDfAtom() {
+        return DF_ATOM;
+    }
+
+    public static DateTimeFormatter getDfDc() {
+        return DF_DC;
+    }
     /**
      * Contents of the current element.
      */

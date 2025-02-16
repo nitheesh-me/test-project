@@ -283,7 +283,7 @@ public abstract class BaseJerseyTest extends JerseyTest {
     public String getAuthenticationCookie(ClientResponse response) {
         String authToken = null;
         for (NewCookie cookie : response.getCookies()) {
-            if (TokenBasedSecurityFilter.COOKIE_NAME.equals(cookie.getName())) {
+            if (TokenBasedSecurityFilter.getCookieName().equals(cookie.getName())) {
                 authToken = cookie.getValue();
             }
         }
@@ -371,7 +371,7 @@ public abstract class BaseJerseyTest extends JerseyTest {
 
     private void addCookiesFromResponse() {
         for (Cookie cookie : response.getCookies()) {
-            if (cookie.getName().equals(TokenBasedSecurityFilter.COOKIE_NAME)) {
+            if (cookie.getName().equals(TokenBasedSecurityFilter.getCookieName())) {
                 cookies.put(cookie.getName(), cookie.getValue());
             }
         }

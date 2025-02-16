@@ -24,18 +24,29 @@ public class TokenBasedSecurityFilter extends SecurityFilter {
     /**
      * Name of the cookie used to store the authentication token.
      */
-    public static final String COOKIE_NAME = "auth_token";
+    private static final String COOKIE_NAME = "auth_token";
 
     /**
      * Lifetime of the authentication token in seconds, since login.
      */
-    public static final int TOKEN_LONG_LIFETIME = 3600 * 24 * 365 * 20;
+    private static final int TOKEN_LONG_LIFETIME = 3600 * 24 * 365 * 20;
 
     /**
      * Lifetime of the authentication token in seconds, since last connection.
      */
-    public static final int TOKEN_SESSION_LIFETIME = 3600 * 24;
+    private static final int TOKEN_SESSION_LIFETIME = 3600 * 24;
 
+    public static String getCookieName() {
+        return COOKIE_NAME;
+    }
+
+    public static int getTokenLongLifetime() {
+        return TOKEN_LONG_LIFETIME;
+    }
+
+    public static int getTokenSessionLifetime() {
+        return TOKEN_SESSION_LIFETIME;
+    }
     /**
      * Extracts and returns an authentication token from a cookie list.
      *
@@ -45,7 +56,7 @@ public class TokenBasedSecurityFilter extends SecurityFilter {
     private static String extractAuthToken(Cookie[] cookies) {
         if (cookies != null)
             for (Cookie cookie : cookies)
-                if (COOKIE_NAME.equals(cookie.getName()) && !cookie.getValue().isEmpty())
+                if (getCookieName().equals(cookie.getName()) && !cookie.getValue().isEmpty())
                     return cookie.getValue();
 
         return null;

@@ -58,13 +58,13 @@ import org.apache.lucene.util.Version;
 public final class ReaderStandardAnalyzer extends StopwordAnalyzerBase {
 
   /** Default maximum allowed token length */
-  public static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
+  private static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
 
   private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
 
   /** An unmodifiable set containing some common English words that are usually not
   useful for searching. */
-  public static final CharArraySet STOP_WORDS_SET = StopAnalyzer.ENGLISH_STOP_WORDS_SET; 
+  private static final CharArraySet STOP_WORDS_SET = StopAnalyzer.ENGLISH_STOP_WORDS_SET;
 
   /** Builds an analyzer with the given stop words.
    * @param matchVersion Lucene version to match See {@link

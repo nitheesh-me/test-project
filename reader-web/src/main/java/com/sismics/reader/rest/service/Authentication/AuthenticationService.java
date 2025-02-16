@@ -31,7 +31,7 @@ public class AuthenticationService {
 
     private IPrincipal principal;
     public boolean authenticate() {
-        Principal principal = (Principal) request.getAttribute(SecurityFilter.PRINCIPAL_ATTRIBUTE);
+        Principal principal = (Principal) request.getAttribute(SecurityFilter.getPrincipalAttribute());
         if (principal instanceof IPrincipal) {
             this.principal = (IPrincipal) principal;
             return !this.principal.isAnonymous();

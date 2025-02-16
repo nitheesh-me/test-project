@@ -48,7 +48,7 @@ public class UserAuth {
         String authToken = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
-                if (TokenBasedSecurityFilter.COOKIE_NAME.equals(cookie.getName())) {
+                if (TokenBasedSecurityFilter.getCookieName().equals(cookie.getName())) {
                     authToken = cookie.getValue();
                 }
             }

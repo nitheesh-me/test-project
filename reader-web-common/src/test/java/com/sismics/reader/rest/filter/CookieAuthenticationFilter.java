@@ -25,7 +25,7 @@ public class CookieAuthenticationFilter extends ClientFilter {
     
     @Override
     public ClientResponse handle(ClientRequest request) throws ClientHandlerException {
-        Cookie cookie = new Cookie(TokenBasedSecurityFilter.COOKIE_NAME, authToken);
+        Cookie cookie = new Cookie(TokenBasedSecurityFilter.getCookieName(), authToken);
         List<Object> cookieList = new ArrayList<Object>();
         cookieList.add(cookie);
         if (authToken != null) {

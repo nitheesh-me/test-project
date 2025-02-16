@@ -199,8 +199,8 @@ public class UserResource{
         String token = userAuth.getSession(username, password, longLasted);
 
         JSONObject response = new JSONObject();
-        int maxAge = longLasted ? TokenBasedSecurityFilter.TOKEN_LONG_LIFETIME : -1;
-        NewCookie cookie = new NewCookie(TokenBasedSecurityFilter.COOKIE_NAME, token, "/", null, null, maxAge, false);
+        int maxAge = longLasted ? TokenBasedSecurityFilter.getTokenLongLifetime() : -1;
+        NewCookie cookie = new NewCookie(TokenBasedSecurityFilter.getCookieName(), token, "/", null, null, maxAge, false);
         return Response.ok().entity(response).cookie(cookie).build();
     }
 
@@ -218,7 +218,7 @@ public class UserResource{
 
         // Deletes the client token in the HTTP response
         JSONObject response = new JSONObject();
-        NewCookie cookie = new NewCookie(TokenBasedSecurityFilter.COOKIE_NAME, null);
+        NewCookie cookie = new NewCookie(TokenBasedSecurityFilter.getCookieName(), null);
         return Response.ok().entity(response).cookie(cookie).build();
     }
 

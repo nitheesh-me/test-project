@@ -10,7 +10,7 @@ import org.joda.time.DateTimeZone;
  * @author jtremeaux
  */
 public class AnonymousPrincipal implements IPrincipal {
-    public static final String ANONYMOUS = "anonymous";
+    protected static final String ANONYMOUS = "anonymous";
     
     /**
      * User locale.
