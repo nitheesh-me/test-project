@@ -10,10 +10,10 @@
   lang: "en",
   authors: (
      (
-          name: "Sanket Adlak",
-          id: "2024204005",
-          address: "team-17 (P90)",
-          email: "sanket.adlak@students.iiit.ac.in"
+      name: "Sanket Adlak",
+      id: "2024204005",
+      address: "team-17 (P90)",
+      email: "sanket.adlak@students.iiit.ac.in"
      ),
      (
       name: "Priyank Nagarnaik",
@@ -63,8 +63,8 @@
 
 = Introduction
 
-The goal of this project is to analyze, document, and improve the existing Rudra's Subscription Service (RSS) Reader. The project involves reverse engineering the current codebase, identifying design smells and code metrics, and implementing refactoring strategies. The project aims to improve the maintainability, readability, and performance of the RSS Reader.
-#todo("Still to be finalized")
+
+The goal of this project is to analyze, document, and improve the existing **Rudra's Subscription Service (RSS) Reader**. The project involves reverse engineering the current codebase, identifying design smells and code metrics, and implementing refactoring strategies. The project aims to improve the maintainability, readability, and performance of the RSS Reader while applying software engineering principles learned in the course.
 
 = Project Objectives
 
