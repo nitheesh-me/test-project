@@ -139,7 +139,7 @@ public class FaviconDownloader {
                         localFile = File.createTempFile("reader_favicon", ".ico");
                         if (ByteStreams.copy(is, new FileOutputStream(localFile)) > 0) {
                             // Check if it is a graphics file, we cannot rely on HTTP headers for Content-Type
-                            String type = MimeTypeUtil.guessMimeType(localFile);
+                            String type = MimeTypeUtil.guessMimeType(localFile).getMimeType();
                             if (type != null) {
                                 String extension = getFAVICON_MIME_TYPE_MAP().get(type);
                                 if (extension != null) {
