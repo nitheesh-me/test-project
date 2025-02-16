@@ -1,7 +1,7 @@
 package com.sismics.reader.rest.resource;
 
 import com.sismics.reader.rest.dao.ThemeDao;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ServerException;
 import com.sismics.util.EnvironmentUtil;
 import org.codehaus.jettison.json.JSONException;
@@ -29,10 +29,10 @@ public class ThemeResource {
      * 
      * @return Response
      */
-    private final AuthencticationService authService ;
+    private final AuthenticationService authService ;
 
     public ThemeResource(@Context HttpServletRequest request) {
-        this.authService = new AuthencticationService(request);
+        this.authService = new AuthenticationService(request);
     }
 
     @GET

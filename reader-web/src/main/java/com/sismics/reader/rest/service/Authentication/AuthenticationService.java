@@ -12,12 +12,12 @@ import javax.ws.rs.core.Context;
 import java.security.Principal;
 import java.util.Set;
 
-public class AuthencticationService {
+public class AuthenticationService {
 
     @Context
     protected HttpServletRequest request;
 
-    public AuthencticationService(HttpServletRequest request) {
+    public AuthenticationService(HttpServletRequest request) {
         this.request = request;
     }
 

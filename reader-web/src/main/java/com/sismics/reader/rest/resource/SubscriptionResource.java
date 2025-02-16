@@ -1,40 +1,23 @@
 package com.sismics.reader.rest.resource;
 
-import com.google.common.io.ByteStreams;
 import com.sismics.reader.core.dao.jpa.*;
-import com.sismics.reader.core.event.SubscriptionImportedEvent;
-import com.sismics.reader.core.model.context.AppContext;
-import com.sismics.reader.core.model.jpa.*;
 import com.sismics.reader.rest.constant.BaseFunction;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.reader.rest.service.Subscription.SubscriptionFeedService;
 import com.sismics.reader.rest.service.Subscription.SubscriptionFileService;
 import com.sismics.reader.rest.service.Subscription.SubscriptionManagementService;
 import com.sismics.rest.exception.ForbiddenClientException;
-import com.sismics.rest.exception.ServerException;
 import com.sismics.rest.util.ValidationUtil;
 import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataParam;
-import org.apache.commons.io.IOUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.w3c.dom.Document;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.StreamingOutput;
-import javax.xml.transform.dom.DOMSource;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 
 /**
@@ -47,12 +30,12 @@ public class SubscriptionResource {
 
     private final SubscriptionFileService subscriptionFileService;
     private final SubscriptionManagementService subscriptionManagementService;
-    private final AuthencticationService authencticationService;
+    private final AuthenticationService authenticationService;
     private final SubscriptionFeedService subscriptionFeedService;
     private final UserDao userDao;
 
     public SubscriptionResource(@Context HttpServletRequest request) throws JSONException {
-        this.authencticationService = new AuthencticationService(request);
+        this.authenticationService = new AuthenticationService(request);
         this.subscriptionManagementService = new SubscriptionManagementService(request);
         this.subscriptionFileService= new SubscriptionFileService(request);
         this.subscriptionFeedService = new SubscriptionFeedService(request);
@@ -76,7 +59,7 @@ public class SubscriptionResource {
     }
 
     private void authenticate() throws JSONException {
-        if (!authencticationService.authenticate()) {
+        if (!authenticationService.authenticate()) {
             throw new ForbiddenClientException();
         }
     }
@@ -186,13 +169,8 @@ public class SubscriptionResource {
             @PathParam("id") String id) throws JSONException {
         authenticate();
 
-        final File faviconFile = subscriptionFileService.getFaviconFile(id);
+        return subscriptionFileService.getFaviconFile(id);
 
-        StreamingOutput stream = os -> ByteStreams.copy(new FileInputStream(faviconFile), os);
-        return Response.ok(stream)
-                .header("Expires", new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z").format(new Date().getTime() + 3600000 * 24 * 7))
-                .header("Content-Disposition", MessageFormat.format("attachment; filename=\"{0}\"", faviconFile.getName()))
-                .build();
     }
 
     /**
@@ -244,40 +222,15 @@ public class SubscriptionResource {
     public Response importFile(
             @FormDataParam("file") FormDataBodyPart fileBodyPart) throws JSONException {
 
-        authencticationService.checkBaseFunction(BaseFunction.IMPORT);
+        authenticationService.checkBaseFunction(BaseFunction.IMPORT);
         
         // Validate input data
         ValidationUtil.validateRequired(fileBodyPart, "file");
 
-        User user = userDao.getById(authencticationService.getPrincipal().getId());
-        
-        InputStream in = fileBodyPart.getValueAs(InputStream.class);
-        File importFile = null;
-        try {
-            // Copy the incoming stream content into a temporary file
-            importFile = File.createTempFile("reader_opml_import", null);
-            IOUtils.copy(in, new FileOutputStream(importFile));
-            
-            SubscriptionImportedEvent event = new SubscriptionImportedEvent();
-            event.setUser(user);
-            event.setImportFile(importFile);
-            AppContext.getInstance().getEventBusManager().getImportEventBus().post(event);
 
-            // Always return ok
-            JSONObject response = new JSONObject();
-            response.put("status", "ok");
-            return Response.ok().entity(response).build();
-        } catch (Exception e) {
-            if (importFile != null) {
-                try {
-                    importFile.delete();
-                } catch (SecurityException e2) {
-                    // NOP
-                }
-            }
-            throw new ServerException("ImportError", "Error importing OPML file", e);
-        }
+        return subscriptionFileService.importFileEvent(fileBodyPart);
     }
+
 
     /**
      * Exports all the user's feeds to an OPML file.
@@ -290,14 +243,7 @@ public class SubscriptionResource {
     public Response export() throws JSONException {
         authenticate();
 
-        Document opmlDocument = subscriptionFileService.getOpmlDocument();
-
-        ResponseBuilder response = Response.ok();
-        final String fileName = "subscriptions.xml";
-        response.header("Content-Disposition", MessageFormat.format("attachment; filename=\"{0}\"", fileName));
-
-        DOMSource domSource = new DOMSource(opmlDocument);
-        return response.entity(domSource).build();
+        return subscriptionFileService.getFileExport();
     }
 
 }

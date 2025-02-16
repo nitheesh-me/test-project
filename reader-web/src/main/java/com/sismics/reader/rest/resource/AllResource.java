@@ -9,7 +9,7 @@ import com.sismics.reader.core.dao.jpa.dto.UserArticleDto;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.security.IPrincipal;
@@ -33,10 +33,10 @@ import java.util.List;
  */
 @Path("/all")
 public class AllResource {
-    private AuthencticationService authService;
+    private AuthenticationService authService;
 
     public AllResource(@Context HttpServletRequest request) {
-        authService = new AuthencticationService(request);
+        authService = new AuthenticationService(request);
     }
 
     /**

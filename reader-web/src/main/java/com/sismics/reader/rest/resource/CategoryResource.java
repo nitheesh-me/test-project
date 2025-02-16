@@ -12,7 +12,7 @@ import com.sismics.reader.core.model.jpa.FeedSubscription;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.rest.util.ValidationUtil;
@@ -38,9 +38,9 @@ import java.util.List;
  */
 @Path("/category")
 public class CategoryResource {
-    private AuthencticationService authHelper;
+    private AuthenticationService authHelper;
     public CategoryResource(@Context HttpServletRequest request) throws JSONException {
-        this.authHelper = new AuthencticationService(request);
+        this.authHelper = new AuthenticationService(request);
     }
     /**
      * Returns all categories.

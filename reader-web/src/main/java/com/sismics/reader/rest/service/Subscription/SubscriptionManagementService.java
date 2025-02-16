@@ -11,7 +11,7 @@ import com.sismics.reader.core.model.jpa.FeedSubscription;
 import com.sismics.reader.core.model.jpa.FeedSynchronization;
 import com.sismics.reader.core.service.FeedService;
 import com.sismics.reader.core.util.EntityManagerUtil;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ServerException;
 import org.apache.commons.lang.StringUtils;
@@ -32,19 +32,19 @@ public class SubscriptionManagementService
     private final CategoryDao categoryDao;
     private final FeedSubscriptionCriteria feedSubscriptionCriteria;
     private final FeedSubscription feedSubscription;
-    private final AuthencticationService authencticationService;
+    private final AuthenticationService authenticationService;
 
     public SubscriptionManagementService(@Context HttpServletRequest request) {
          this.feedSubscriptionDao = new FeedSubscriptionDao();
          this.categoryDao = new CategoryDao();
          this.feedSubscriptionCriteria = new FeedSubscriptionCriteria();
          this.feedSubscription = new FeedSubscription();
-         this.authencticationService = new AuthencticationService(request);
+         this.authenticationService = new AuthenticationService(request);
     }
 
      public JSONObject updateSubscription(String id, String title, String categoryId, Integer order) throws JSONException {
         // Get the subscription
-        FeedSubscription feedSubscription = feedSubscriptionDao.getFeedSubscription(id, authencticationService.getPrincipal().getId());
+        FeedSubscription feedSubscription = feedSubscriptionDao.getFeedSubscription(id, authenticationService.getPrincipal().getId());
         if (feedSubscription == null) {
             throw new ClientException("SubscriptionNotFound", MessageFormat.format("Subscription not found: {0}", id));
         }
@@ -56,7 +56,7 @@ public class SubscriptionManagementService
         if (StringUtils.isNotBlank(categoryId)) {
 
             try {
-                categoryDao.getCategory(categoryId, authencticationService.getPrincipal().getId());
+                categoryDao.getCategory(categoryId, authenticationService.getPrincipal().getId());
             } catch (NoResultException e) {
                 throw new ClientException("CategoryNotFound", MessageFormat.format("Category not found: {0}", categoryId));
             }
@@ -79,7 +79,7 @@ public class SubscriptionManagementService
 
      public JSONObject createSubscription(String url, String title) throws JSONException {
         // Check if the user is already subscribed to this feed
-        feedSubscriptionCriteria.setUserId(authencticationService.getPrincipal().getId())
+        feedSubscriptionCriteria.setUserId(authenticationService.getPrincipal().getId())
                 .setFeedUrl(url);
         List<FeedSubscriptionDto> feedSubscriptionList = feedSubscriptionDao.findByCriteria(feedSubscriptionCriteria);
         if (!feedSubscriptionList.isEmpty()) {
@@ -97,7 +97,7 @@ public class SubscriptionManagementService
         }
 
         // Check again that we are not subscribed, in case the page URL was replaced by the feed URL
-        feedSubscriptionCriteria.setUserId(authencticationService.getPrincipal().getId())
+        feedSubscriptionCriteria.setUserId(authenticationService.getPrincipal().getId())
                 .setFeedUrl(feed.getRssUrl());
         feedSubscriptionList = feedSubscriptionDao.findByCriteria(feedSubscriptionCriteria);
         if (!feedSubscriptionList.isEmpty()) {
@@ -105,13 +105,13 @@ public class SubscriptionManagementService
         }
 
         // Get the root category
-        Category category = categoryDao.getRootCategory(authencticationService.getPrincipal().getId());
+        Category category = categoryDao.getRootCategory(authenticationService.getPrincipal().getId());
 
         // Get the display order
-        Integer displayOrder = feedSubscriptionDao.getCategoryCount(category.getId(), authencticationService.getPrincipal().getId());
+        Integer displayOrder = feedSubscriptionDao.getCategoryCount(category.getId(), authenticationService.getPrincipal().getId());
 
         // Create the subscription
-        feedSubscription.setUserId(authencticationService.getPrincipal().getId());
+        feedSubscription.setUserId(authenticationService.getPrincipal().getId());
         feedSubscription.setFeedId(feed.getId());
         feedSubscription.setCategoryId(category.getId());
         feedSubscription.setOrder(displayOrder);
@@ -121,7 +121,7 @@ public class SubscriptionManagementService
 
         // Create the initial article subscriptions for this user
         EntityManagerUtil.flush();
-        feedService.createInitialUserArticle(authencticationService.getPrincipal().getId(), feedSubscription);
+        feedService.createInitialUserArticle(authenticationService.getPrincipal().getId(), feedSubscription);
 
         JSONObject response = new JSONObject();
         response.put("id", feedSubscriptionId);
@@ -132,7 +132,7 @@ public class SubscriptionManagementService
      public JSONObject deleteSubscription(String id) throws JSONException {
         // Get the subscription
         FeedSubscriptionDao feedSubscriptionDao = new FeedSubscriptionDao();
-        FeedSubscription feedSubscription = feedSubscriptionDao.getFeedSubscription(id, authencticationService.getPrincipal().getId());
+        FeedSubscription feedSubscription = feedSubscriptionDao.getFeedSubscription(id, authenticationService.getPrincipal().getId());
         if (feedSubscription == null) {
             throw new ClientException("SubscriptionNotFound", MessageFormat.format("Subscription not found: {0}", id));
         }
@@ -151,7 +151,7 @@ public class SubscriptionManagementService
         // Get the subscription
         FeedSubscriptionCriteria feedSubscriptionCriteria = new FeedSubscriptionCriteria()
                 .setId(id)
-                .setUserId(authencticationService.getPrincipal().getId());
+                .setUserId(authenticationService.getPrincipal().getId());
 
         FeedSubscriptionDao feedSubscriptionDao = new FeedSubscriptionDao();
         List<FeedSubscriptionDto> feedSubscriptionList = feedSubscriptionDao.findByCriteria(feedSubscriptionCriteria);
@@ -184,7 +184,7 @@ public class SubscriptionManagementService
     public JSONObject markAllRead(String id) throws JSONException {
         // Get the subscription
         FeedSubscriptionDao feedSubscriptionDao = new FeedSubscriptionDao();
-        FeedSubscription feedSubscription = feedSubscriptionDao.getFeedSubscription(id, authencticationService.getPrincipal().getId());
+        FeedSubscription feedSubscription = feedSubscriptionDao.getFeedSubscription(id, authenticationService.getPrincipal().getId());
         if (feedSubscription == null) {
             throw new ClientException("SubscriptionNotFound", MessageFormat.format("Subscription not found: {0}", id));
         }
@@ -192,7 +192,7 @@ public class SubscriptionManagementService
         // Marks all articles as read in this subscription
         UserArticleDao userArticleDao = new UserArticleDao();
         userArticleDao.markAsRead(new UserArticleCriteria()
-                .setUserId(authencticationService.getPrincipal().getId())
+                .setUserId(authenticationService.getPrincipal().getId())
                 .setSubscribed(true)
                 .setFeedSubscriptionId(id));
 

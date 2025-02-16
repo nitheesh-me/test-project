@@ -7,7 +7,7 @@ import com.sismics.reader.core.model.jpa.UserArticle;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.security.IPrincipal;
@@ -38,9 +38,9 @@ public class StarredResource {
      * @param afterArticle Start the list after this article
      * @return Response
      */
-    private AuthencticationService authHelper;
+    private AuthenticationService authHelper;
     public StarredResource(@Context HttpServletRequest request) throws JSONException {
-        this.authHelper = new AuthencticationService(request);
+        this.authHelper = new AuthenticationService(request);
     }
 
     @GET

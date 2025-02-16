@@ -11,7 +11,7 @@ import com.sismics.reader.core.model.jpa.Category;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.util.JsonUtil;
 import com.sismics.security.IPrincipal;
@@ -37,7 +37,7 @@ public class SubscriptionFeedService {
 
     public SubscriptionFeedService(@Context HttpServletRequest request){
         this.userArticleDao = new UserArticleDao();
-        AuthencticationService authService = new AuthencticationService(request);
+        AuthenticationService authService = new AuthenticationService(request);
         this.userArticleCriteria = new UserArticleCriteria();
         this.categoryDao = new CategoryDao();
         this.afterArticleCriteria = new UserArticleCriteria();

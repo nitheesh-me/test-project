@@ -5,10 +5,9 @@ import com.sismics.reader.core.util.ConfigUtil;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.rest.constant.BaseFunction;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.rest.exception.ServerException;
-import com.sismics.security.IPrincipal;
 import com.sismics.util.NetworkUtil;
 import com.sismics.util.log4j.LogCriteria;
 import com.sismics.util.log4j.LogEntry;
@@ -35,9 +34,9 @@ import java.util.ResourceBundle;
  */
 @Path("/app")
 public class AppResource  {
-    private final AuthencticationService authService;
+    private final AuthenticationService authService;
     public AppResource(@Context HttpServletRequest request) {
-        this.authService = new AuthencticationService(request);
+        this.authService = new AuthenticationService(request);
     }
 
     /**

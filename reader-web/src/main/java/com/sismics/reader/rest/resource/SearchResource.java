@@ -5,7 +5,7 @@ import com.sismics.reader.core.model.context.AppContext;
 import com.sismics.reader.core.service.IndexingService;
 import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.rest.assembler.ArticleAssembler;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ServerException;
 import com.sismics.rest.util.ValidationUtil;
 import org.codehaus.jettison.json.JSONException;
@@ -26,9 +26,9 @@ import java.util.List;
  */
 @Path("/search")
 public class SearchResource {
-    private final AuthencticationService authHelper;
+    private final AuthenticationService authHelper;
     public SearchResource(@Context HttpServletRequest request) {
-        this.authHelper = new AuthencticationService(request);
+        this.authHelper = new AuthenticationService(request);
     }
 
     /**

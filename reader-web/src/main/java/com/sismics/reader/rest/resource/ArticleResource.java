@@ -8,7 +8,7 @@ import com.sismics.reader.core.dao.jpa.criteria.FeedSubscriptionCriteria;
 import com.sismics.reader.core.dao.jpa.dto.ArticleDto;
 import com.sismics.reader.core.dao.jpa.dto.FeedSubscriptionDto;
 import com.sismics.reader.core.model.jpa.UserArticle;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.security.IPrincipal;
@@ -31,10 +31,10 @@ import java.util.List;
  */
 @Path("/article")
 public class ArticleResource  {
-    private final AuthencticationService authHelper;
+    private final AuthenticationService authHelper;
     IPrincipal principal;
     public ArticleResource(@Context HttpServletRequest request) throws JSONException {
-        this.authHelper = new AuthencticationService(request);
+        this.authHelper = new AuthenticationService(request);
         principal = authHelper.getPrincipal();
     }
     /**

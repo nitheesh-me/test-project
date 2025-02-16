@@ -8,7 +8,7 @@ import com.sismics.reader.core.model.context.AppContext;
 import com.sismics.reader.core.model.jpa.Category;
 import com.sismics.reader.core.model.jpa.User;
 import com.sismics.reader.rest.constant.BaseFunction;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ServerException;
 import com.sismics.rest.util.ValidationUtil;
@@ -24,9 +24,9 @@ import java.util.Date;
 import java.util.Set;
 
 public class UserRegistrationService  {
-    private final AuthencticationService authService;
+    private final AuthenticationService authService;
     public UserRegistrationService(@Context HttpServletRequest request) {
-        this.authService = new AuthencticationService(request);
+        this.authService = new AuthenticationService(request);
 
     }
 

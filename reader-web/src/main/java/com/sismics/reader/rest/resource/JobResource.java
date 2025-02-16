@@ -1,12 +1,8 @@
 package com.sismics.reader.rest.resource;
 
 import com.sismics.reader.core.dao.jpa.JobDao;
-import com.sismics.reader.core.dao.jpa.UserDao;
 import com.sismics.reader.core.model.jpa.Job;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
-import com.sismics.reader.rest.service.Subscription.SubscriptionFeedService;
-import com.sismics.reader.rest.service.Subscription.SubscriptionFileService;
-import com.sismics.reader.rest.service.Subscription.SubscriptionManagementService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.security.IPrincipal;
@@ -31,10 +27,10 @@ import javax.ws.rs.core.Response;
 public class JobResource {
 
 
-    private AuthencticationService authHelper;
+    private AuthenticationService authHelper;
     private IPrincipal principal;
     public JobResource(@Context HttpServletRequest request) throws JSONException {
-        this.authHelper = new AuthencticationService(request);
+        this.authHelper = new AuthenticationService(request);
         this.principal = authHelper.getPrincipal();
     }
     /**

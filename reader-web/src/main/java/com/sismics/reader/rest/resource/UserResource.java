@@ -3,7 +3,7 @@ package com.sismics.reader.rest.resource;
 import com.sismics.reader.core.dao.jpa.*;
 import com.sismics.reader.core.model.jpa.User;
 import com.sismics.reader.rest.constant.BaseFunction;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.reader.rest.service.User.UserAuth;
 import com.sismics.reader.rest.service.User.UserInfoService;
 import com.sismics.reader.rest.service.User.UserRegistrationService;
@@ -40,14 +40,14 @@ public class UserResource{
      * @param localeId Locale ID
      * @return Response
      */
-    private final AuthencticationService authencticationService;
+    private final AuthenticationService authenticationService;
     private final UserAuth userAuth;
     private final UserRegistrationService userRegistrationService ;
     private final UserInfoService userInfoService;
 
     public UserResource(@Context HttpServletRequest request) {
-        this.authencticationService = new AuthencticationService(request);
-        this.userInfoService = new UserInfoService(authencticationService.getRequest());
+        this.authenticationService = new AuthenticationService(request);
+        this.userInfoService = new UserInfoService(authenticationService.getRequest());
         this.userRegistrationService = new UserRegistrationService(request);
         this.userAuth = new UserAuth();
     }
@@ -62,15 +62,15 @@ public class UserResource{
 
         isAdmin();
 
-        JSONObject response = userRegistrationService.registerUser(username, password, localeId, email, authencticationService.getRequest());
+        JSONObject response = userRegistrationService.registerUser(username, password, localeId, email, authenticationService.getRequest());
         return Response.ok().entity(response).build();
     }
 
     private void isAdmin() throws JSONException {
-        if (!authencticationService.authenticate()) {
+        if (!authenticationService.authenticate()) {
             throw new ForbiddenClientException();
         }
-        authencticationService.checkBaseFunction(BaseFunction.ADMIN);
+        authenticationService.checkBaseFunction(BaseFunction.ADMIN);
     }
 
     /**
@@ -100,13 +100,13 @@ public class UserResource{
         @FormParam("display_unread_mobile") Boolean displayUnreadMobile,
         @FormParam("narrow_article") Boolean narrowArticle,
         @FormParam("first_connection") Boolean firstConnection) throws JSONException {
-        IPrincipal principal = authencticationService.getPrincipal();
+        IPrincipal principal = authenticationService.getPrincipal();
         
         // Validate the input data
         password = ValidationUtil.validateLength(password, "password", 8, 50, true);
         email = ValidationUtil.validateLength(email, "email", null, 100, true);
         localeId = com.sismics.reader.rest.util.ValidationUtil.validateLocale(localeId, "locale", true);
-        themeId = com.sismics.reader.rest.util.ValidationUtil.validateTheme(EnvironmentUtil.isUnitTest() ? null : authencticationService.getRequest().getServletContext(), themeId, "theme", true);
+        themeId = com.sismics.reader.rest.util.ValidationUtil.validateTheme(EnvironmentUtil.isUnitTest() ? null : authenticationService.getRequest().getServletContext(), themeId, "theme", true);
 
         JSONObject response = userRegistrationService.updateUser(password, email, themeId, localeId, displayTitleWeb, displayTitleMobile, displayUnreadWeb, displayUnreadMobile, narrowArticle, firstConnection, principal);
         return Response.ok().entity(response).build();
@@ -146,7 +146,7 @@ public class UserResource{
         password = ValidationUtil.validateLength(password, "password", 8, 50, true);
         email = ValidationUtil.validateLength(email, "email", null, 100, true);
         localeId = com.sismics.reader.rest.util.ValidationUtil.validateLocale(localeId, "locale", true);
-        themeId = com.sismics.reader.rest.util.ValidationUtil.validateTheme(authencticationService.getRequest().getServletContext(), themeId, "theme", true);
+        themeId = com.sismics.reader.rest.util.ValidationUtil.validateTheme(authenticationService.getRequest().getServletContext(), themeId, "theme", true);
 
         JSONObject response = userRegistrationService.updateUserInfo(username, password, email, themeId, localeId, displayTitleWeb, displayTitleMobile, displayUnreadWeb, displayUnreadMobile, narrowArticle);
         return Response.ok().entity(response).build();
@@ -214,7 +214,7 @@ public class UserResource{
     @Produces(MediaType.APPLICATION_JSON)
     public Response logout() throws JSONException {
 
-        userAuth.destroySession(authencticationService.getRequest());
+        userAuth.destroySession(authenticationService.getRequest());
 
         // Deletes the client token in the HTTP response
         JSONObject response = new JSONObject();
@@ -231,7 +231,7 @@ public class UserResource{
     @Produces(MediaType.APPLICATION_JSON)
     public Response delete() throws JSONException {
         isAdmin();
-        IPrincipal principal = authencticationService.getPrincipal();
+        IPrincipal principal = authenticationService.getPrincipal();
         // Delete the user
         UserDao userDao = new UserDao();
         userDao.delete(principal.getName());
@@ -266,8 +266,8 @@ public class UserResource{
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response info() throws JSONException {
-        IPrincipal principal = authencticationService.getPrincipal();
-        JSONObject response = userInfoService.getInfo(principal,authencticationService.getRequest());
+        IPrincipal principal = authenticationService.getPrincipal();
+        JSONObject response = userInfoService.getInfo(principal, authenticationService.getRequest());
 
         return Response.ok().entity(response).build();
     }

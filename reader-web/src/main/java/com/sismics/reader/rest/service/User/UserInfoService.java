@@ -15,7 +15,7 @@ import com.sismics.reader.core.util.jpa.PaginatedList;
 import com.sismics.reader.core.util.jpa.PaginatedLists;
 import com.sismics.reader.core.util.jpa.SortCriteria;
 import com.sismics.reader.rest.constant.BaseFunction;
-import com.sismics.reader.rest.service.Authentication.AuthencticationService;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.security.IPrincipal;
 import com.sismics.security.UserPrincipal;
 import com.sismics.util.LocaleUtil;
@@ -29,14 +29,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserInfoService {
-    private final AuthencticationService authService;
+    private final AuthenticationService authService;
     private final UserDao userDao;
     private final JobDao jobDao;
     private final JobEventDao jobEventDao;
     private final JobCriteria jobCriteria;
 
     public UserInfoService(@Context HttpServletRequest request) {
-        this.authService = new AuthencticationService(request);
+        this.authService = new AuthenticationService(request);
         this.userDao = new UserDao();
         this.jobDao = new JobDao();
         this.jobEventDao = new JobEventDao();
