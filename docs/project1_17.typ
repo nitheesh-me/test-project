@@ -25,7 +25,7 @@
       name: "Aditya Singh Rathore",
       id: "2024204012",
       address: "team-17 (P90)",
-      email: "name@email.address"
+      email: "aditya.sing@students.iiit.ac.in"
     ),
     (
       name: "Yash Sonkar",
@@ -64,17 +64,17 @@
 = Introduction
 
 
-The goal of this project is to analyze, document, and improve the existing **Rudra's Subscription Service (RSS) Reader**. The project involves reverse engineering the current codebase, identifying design smells and code metrics, and implementing refactoring strategies. The project aims to improve the maintainability, readability, and performance of the RSS Reader while applying software engineering principles learned in the course.
+The goal of this project is to analyze, document, and improve the existing Rudra's Subscription Service (RSS) Reader. The project involves reverse engineering the current codebase, identifying design smells and code metrics, and implementing refactoring strategies. The project aims to improve the maintainability, readability, and performance of the RSS Reader while applying software engineering principles learned in the course.
 
 = Project Objectives
 
-- Analyze the existing RSS Reader codebase.
-- Identify and document relevant system classes and components.
-- Detect and justify design smells.
-- Measure software quality through code metrics.
-- Refactor the system based on software engineering principles.
-- Compare manual refactoring with AI-generated suggestions.
-- Automate the refactoring pipeline.
+- Analyze the existing RSS Reader codebase to understand its structure and functionality.
+- Identify and document relevant system classes and components for the three major subsystems: Subscription and Content, Feed Organization, and User Management.
+- Detect and justify design smells using tools like SonarQube and Designite Java, supported by manual inspection.
+- Measure software quality through code metrics such as Cyclomatic Complexity, Code Duplication, and OOP-specific metrics (e.g., Chidamber and Kemerer metrics).
+- Refactor the system based on identified design smells and metrics, ensuring adherence to software engineering principles.
+- Compare manual refactoring with AI-generated suggestions using Large Language Models (LLMs) like GPT-4 or Claude.
+- Automate the refactoring pipeline by integrating LLMs to detect design smells, refactor code, and generate pull requests.
 
 = System Overview
 
@@ -89,16 +89,156 @@ Rudra's Subscription Service (RSS) Reader is a web-based RSS aggregator that all
 
 == Identification of Relevant Classes
 
+=== Subscription and Content Subsystem
+
++ *SubscriptionResource (REST Resource)*
+  - Handles feed subscription management via REST API
+  - _Functionality_: Add/update/delete subscriptions, import/export feeds (OPML/Google Takeout), fetch recent articles
+  - _Behavior_: Validates inputs, coordinates with DAOs for persistence, triggers feed synchronization
+
++ *FeedService (Service)*
+    - Core service for feed synchronization and maintenance
+    - _Functionality_: Periodic feed updates, feed parsing, article deduplication, favicon updates
+    - _Behavior_: Uses Quartz scheduler, coordinates with FeedDao/ArticleDao, handles feed parsing errors
+
++ *Feed (Model)*
+    - Represents RSS feed entity
+    - _Attributes_: RSS URL, website URL, title, description, synchronization status
+    - _Behavior_: Persisted via FeedDao, contains article relationships
+
++ *Article (Model)*
+    - Represents individual article content
+    - _Attributes_: Title, content URL, publication date, enclosures
+    - _Behavior_: Managed by ArticleDao, linked to parent Feed
+
++ *OpmlReader (Utility)*
+    - Parses OPML subscription files
+    - _Functionality_: Imports/Exports feed lists in standard OPML format
+    - _Behavior_: XML parsing, outline hierarchy processing
+
++ *FeedSubscriptionDao (DAO)*
+    - Manages user-feed subscription relationships
+    - _Functionality_: Subscription CRUD operations, unread count tracking
+    - _Behavior_: Uses FeedSubscriptionCriteria for queries, updates denormalized counts
+
++ *FeedSynchronizationDao (DAO)*
+    - Tracks feed update history
+    - _Functionality_: Records synchronization attempts and outcomes
+    - _Behavior_: Maintains performance metrics for feed updates
+
+=== Feed Organization Subsystem
+
++ *CategoryResource (REST Resource)*
+    - Manages folder organization via REST
+    - _Functionality_: Create/update/delete categories, manage article visibility
+    - _Behavior_: Enforces folder hierarchy, coordinates with CategoryDao
+
++ *CategoryDao (DAO)*
+    - Handles folder persistence and hierarchy
+    - _Functionality_: Parent-child category relationships, ordering
+    - _Behavior_: Uses nested set pattern for tree operations
+
++ *UserArticleDao (DAO)*
+    - Manages user-specific article states
+    - _Functionality_: Read/unread tracking, starring, bulk operations
+    - _Behavior_: Uses complex UserArticleCriteria for filtered queries
+
++ *SearchResource (REST Resource)*
+    - Provides full-text search capabilities
+    - _Functionality_: Lucene-based article search
+    - _Behavior_: Integrates with IndexingService, handles pagination
+
++ *ArticleAssembler (DTO Mapper)*
+    - Transforms domain models to API responses
+    - _Functionality_: JSON serialization, field filtering
+    - _Behavior_: Used by REST resources to format outputs
+
++ *StarredResource (REST Resource)*
+    - Manages starred articles
+    - _Functionality_: Bulk starring/unstarring operations
+    - _Behavior_: Coordinates with UserArticleDao for state changes
+
++ *IndexingService (Service)*
+    - Maintains search index
+    - _Functionality_: Lucene index management, query processing
+    - _Behavior_: Async index rebuilding, handles search pagination
+
+=== User Management Subsystem
+
++ *UserResource (REST Resource)*
+    - Exposes user management API
+    - _Functionality_: Registration, login, profile updates
+    - _Behavior_: Uses BCrypt password hashing, JWT token issuance
+
++ *UserDao (DAO)*
+    - Manages user persistence
+    - _Functionality_: CRUD operations, password hashing
+    - _Behavior_: Enforces unique usernames, soft deletes
+
++ *AuthenticationTokenDao (DAO)*
+    - Manages session tokens
+    - _Functionality_: Token generation/validation, session cleanup
+    - _Behavior_: Supports both cookie and header-based auth
+
++ *SecurityFilter (Security)*
+    - Authentication/Authorization filter
+    - _Functionality_: Request validation, role checking
+    - _Behavior_: Integrates with UserPrincipal/IPrincipal
+
++ *UserPrincipal (Security)*
+    - Represents authenticated user context
+    - _Functionality_: Role-based access control
+    - _Behavior_: Carries user permissions (BaseFunction enum)
+
++ *PasswordChangedEvent (Event)*
+    - Domain event for credential changes
+    - _Functionality_: Triggers security updates
+    - _Behavior_: Published through AppContext event bus
+
++ *AppContext (Singleton)*
+    - Manages application-wide services
+    - _Functionality_: DI container, event bus coordination
+    - _Behavior_: Initializes DAOs/Services, handles async operations
+
 == UML Class Diagram
 
+=== Subscription and Content Subsystem
 #figure(
-  image("./assets/iiith.png", width: 80%),
-  caption: [A curious figure.],
+  image("./UML/SubscriptionSubsystem.svg", width: 80%),
+  caption: [Class Diagram of Subscription and Content Subsystem],
 ) <subscription-content>
 
-== Observation and Comments
-
 As per @subscription-content we can observe that ...
+
+=== Feed Organization Subsystem
+#figure(
+  image("./UML/FeedOrganizationSubsystem.svg", width: 80%),
+  caption: [Class Diagram of Feed Organization Subsystem],
+) <feed-organization>
+
+#figure(
+  image("./UML/IndexingService.svg", width: 80%),
+  caption: [Class Diagram of Indexing Service],
+) <indexing-service>
+
+As per @feed-organization & @indexing-service we can observe that ...
+
+=== User Management Subsystem
+#figure(
+  image("./UML/UserManagement.svg", width: 80%),
+  caption: [Class Diagram of User Management Subsystem],
+) <user-management>
+
+As per @user-management we can observe that ...
+
+== Observation and Comments
+*Strengths*
+  -
+  -
+
+*Weaknesses*
+  -
+  -
 
 
 
