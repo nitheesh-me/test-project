@@ -1,0 +1,36 @@
+name: Design Smell Analysis
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  detect_and_refactor_smells:
+    permissions:
+      contents: write
+      pull-requests: write  # Add this permission
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Add this to ensure full repository history
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install javalang PyGithub gitpython google-generativeai
+
+      - name: Run design smell analysis
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python refactorPipeline.py
