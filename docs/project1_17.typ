@@ -85,121 +85,120 @@ Rudra's Subscription Service (RSS) Reader is a web-based RSS aggregator that all
 + User Management Subsystem - Manages user accounts and authentication.
 
 = Task 1: Reverse Engineering
-#todo("Details to be added to below sections")
 
 == Identification of Relevant Classes
 
 === Subscription and Content Subsystem
 
-+ *SubscriptionResource (REST Resource)*
++ *`SubscriptionResource` (REST Resource)*
   - Handles feed subscription management via REST API
   - _Functionality_: Add/update/delete subscriptions, import/export feeds (OPML/Google Takeout), fetch recent articles
   - _Behavior_: Validates inputs, coordinates with DAOs for persistence, triggers feed synchronization
-
-+ *FeedService (Service)*
+  
++ *`FeedService` (Service)*
     - Core service for feed synchronization and maintenance
     - _Functionality_: Periodic feed updates, feed parsing, article deduplication, favicon updates
-    - _Behavior_: Uses Quartz scheduler, coordinates with FeedDao/ArticleDao, handles feed parsing errors
+    - _Behavior_: Uses Quartz scheduler, coordinates with `FeedDao`/`ArticleDao`, handles feed parsing errors
 
-+ *Feed (Model)*
++ *`Feed` (Model)*
     - Represents RSS feed entity
     - _Attributes_: RSS URL, website URL, title, description, synchronization status
-    - _Behavior_: Persisted via FeedDao, contains article relationships
+    - _Behavior_: Persisted via `FeedDao`, contains article relationships
 
-+ *Article (Model)*
++ *`Article` (Model)*
     - Represents individual article content
     - _Attributes_: Title, content URL, publication date, enclosures
-    - _Behavior_: Managed by ArticleDao, linked to parent Feed
+    - _Behavior_: Managed by `ArticleDao`, linked to parent Feed
 
-+ *OpmlReader (Utility)*
++ *`OpmlReader` (Utility)*
     - Parses OPML subscription files
     - _Functionality_: Imports/Exports feed lists in standard OPML format
     - _Behavior_: XML parsing, outline hierarchy processing
 
-+ *FeedSubscriptionDao (DAO)*
++ *`FeedSubscriptionDao` (DAO)*
     - Manages user-feed subscription relationships
     - _Functionality_: Subscription CRUD operations, unread count tracking
-    - _Behavior_: Uses FeedSubscriptionCriteria for queries, updates denormalized counts
+    - _Behavior_: Uses `FeedSubscriptionCriteria` for queries, updates denormalized counts
 
-+ *FeedSynchronizationDao (DAO)*
++ *`FeedSynchronizationDao` (DAO)*
     - Tracks feed update history
     - _Functionality_: Records synchronization attempts and outcomes
     - _Behavior_: Maintains performance metrics for feed updates
-
+    
 === Feed Organization Subsystem
 
-+ *CategoryResource (REST Resource)*
++ *`CategoryResource` (REST Resource)*
     - Manages folder organization via REST
     - _Functionality_: Create/update/delete categories, manage article visibility
-    - _Behavior_: Enforces folder hierarchy, coordinates with CategoryDao
+    - _Behavior_: Enforces folder hierarchy, coordinates with `CategoryDao`
 
-+ *CategoryDao (DAO)*
++ *`CategoryDao` (DAO)*
     - Handles folder persistence and hierarchy
     - _Functionality_: Parent-child category relationships, ordering
     - _Behavior_: Uses nested set pattern for tree operations
 
-+ *UserArticleDao (DAO)*
++ *`UserArticleDao` (DAO)*
     - Manages user-specific article states
     - _Functionality_: Read/unread tracking, starring, bulk operations
-    - _Behavior_: Uses complex UserArticleCriteria for filtered queries
+    - _Behavior_: Uses complex `UserArticleCriteria` for filtered queries
 
-+ *SearchResource (REST Resource)*
++ *`SearchResource` (REST Resource)*
     - Provides full-text search capabilities
     - _Functionality_: Lucene-based article search
-    - _Behavior_: Integrates with IndexingService, handles pagination
+    - _Behavior_: Integrates with `IndexingService`, handles pagination
 
-+ *ArticleAssembler (DTO Mapper)*
++ *`ArticleAssembler` (DTO Mapper)*
     - Transforms domain models to API responses
-    - _Functionality_: JSON serialization, field filtering
-    - _Behavior_: Used by REST resources to format outputs
+    - _Functionality_: `JSON` serialization, field filtering
+    - _Behavior_: Used by `REST` resources to format outputs
 
-+ *StarredResource (REST Resource)*
++ *`StarredResource` (REST Resource)*
     - Manages starred articles
     - _Functionality_: Bulk starring/unstarring operations
-    - _Behavior_: Coordinates with UserArticleDao for state changes
+    - _Behavior_: Coordinates with `UserArticleDao` for state changes
 
-+ *IndexingService (Service)*
++ *`IndexingService` (Service)*
     - Maintains search index
     - _Functionality_: Lucene index management, query processing
     - _Behavior_: Async index rebuilding, handles search pagination
 
 === User Management Subsystem
 
-+ *UserResource (REST Resource)*
++ *`UserResource` (REST Resource)*
     - Exposes user management API
     - _Functionality_: Registration, login, profile updates
-    - _Behavior_: Uses BCrypt password hashing, JWT token issuance
+    - _Behavior_: Uses `BCrypt` password hashing, `JWT` token issuance
 
-+ *UserDao (DAO)*
++ *`UserDao` (DAO)*
     - Manages user persistence
     - _Functionality_: CRUD operations, password hashing
     - _Behavior_: Enforces unique usernames, soft deletes
 
-+ *AuthenticationTokenDao (DAO)*
++ *`AuthenticationTokenDao` (DAO)*
     - Manages session tokens
     - _Functionality_: Token generation/validation, session cleanup
     - _Behavior_: Supports both cookie and header-based auth
 
-+ *SecurityFilter (Security)*
++ *`SecurityFilter` (Security)*
     - Authentication/Authorization filter
     - _Functionality_: Request validation, role checking
-    - _Behavior_: Integrates with UserPrincipal/IPrincipal
+    - _Behavior_: Integrates with `UserPrincipal`/`IPrincipal`
 
-+ *UserPrincipal (Security)*
++ *`UserPrincipal` (Security)*
     - Represents authenticated user context
     - _Functionality_: Role-based access control
-    - _Behavior_: Carries user permissions (BaseFunction enum)
+    - _Behavior_: Carries user permissions (`BaseFunction` `enum`)
 
-+ *PasswordChangedEvent (Event)*
++ *`PasswordChangedEvent` (Event)*
     - Domain event for credential changes
     - _Functionality_: Triggers security updates
-    - _Behavior_: Published through AppContext event bus
+    - _Behavior_: Published through `AppContext` event bus
 
-+ *AppContext (Singleton)*
++ *`AppContext` (Singleton)*
     - Manages application-wide services
     - _Functionality_: DI container, event bus coordination
     - _Behavior_: Initializes DAOs/Services, handles async operations
-
+    
 == UML Class Diagram
 
 === Subscription and Content Subsystem
@@ -286,17 +285,16 @@ The system has complexity, tight coupling in some areas, and potential performan
 #figure(
   table(
     columns: (auto, auto, auto),
-    inset: 10pt,
+    inset: 5pt,
     align: horizon,
     table.header(
       [*Design Smell*], [*Description*], [*Justification*],
     ),
-    [Deficient Encapsulation], [This smell occurs when the declared accessibility of one or more members of an abstraction is more permissive than actually required.], [The class fields or methods are not properly encapsulated, leading to potential misuse or unintended access from outside the class.],
-    [Broken Modularization], [This smell arises when data and/or methods that ideally should have been localized into a single abstraction are separated and spread across multiple abstractions], [],
-    [Imperative Abstraction],[This smell arises when an operation is turned into a class],[],
-    [God Class],[This smell occurs when a class is large containing too many variables and methods],[],
-    [Cyclic Dependency],[This smell arises when two or more abstractions depend on each other directly or indirectly],[],
-    [],[],[],
+    [Deficient Encapsulation], [This smell occurs when the declared accessibility of one or more members of an abstraction is more permissive than actually required.], [The class fields or methods are not properly encapsulated, leading to potential misuse or unintended access from outside the class. \ https://github.com/SE-course-serc/project-1-team-17/issues/4],
+    [Primitive Obsession / Broken Modularization (as per Designite)], [This smell occurs when primitive data types are used where an abstraction encapsulation the primitives could serve better], [MIME types are representd as bare string constants. \ https://github.com/SE-course-serc/project-1-team-17/issues/5],
+    [Imperative Abstraction],[This smell arises when an operation is turned into a class],[The tool detected this design smell in 3 classes and we merged them into a single class \ https://github.com/SE-course-serc/project-1-team-17/issues/6],
+    [God Class],[This smell occurs when a class is large containing too many variables and methods],[The AppContext was a God Class that was refactored by implementing EvenBusManager and AsyncTaskManager \ https://github.com/SE-course-serc/project-1-team-17/issues/7],
+    [Cyclic Dependency],[This smell arises when two or more abstractions depend on each other directly or indirectly],[https://github.com/SE-course-serc/project-1-team-17/issues/8]
   ),
   caption: [Design Smells Identified in the RSS Reader],
 )
@@ -307,27 +305,60 @@ The system has complexity, tight coupling in some areas, and potential performan
 - CodeMR
 - Designite
 
-Extracted Metrics
-
+*Extracted Metrics*
+  #figure(
+    image("./assets/codemr-c3-bf.png", height:50%),
+    caption: [C3 before refactoring],
+  ) <c3-bf>
 #figure(
-  table(
-    columns: (auto, auto, auto),
-    inset: 10pt,
-    align: horizon,
-    table.header(
-      [*Metric*], [*Value*], [*Implication*],
-    ),
-    [Cyclomatic Complexity], [5], [Moderate complexity.],
-    [Code Duplication], [10%], [High code duplication.],
-  ),
-  caption: [Code Metrics Extracted from the RSS Reader],
-)
+    image("./assets/codemr-metrics-bf.png", height:70%),
+    caption: [Metrics before refactoring],
+  ) <metrics-bf>
+#figure(
+  image("./assets/sonarqube.png", width:100%),
+  caption: [SonarQube Stats before refactoring],
+) <sq-bf>
+#figure(
+  image("./assets/sonarqube-issues-1.png", width:100%),
+  caption: [SonarQube Issues before refactoring],
+) <sq-iss-1>
+#figure(
+  image("./assets/sonarqube-issues-2.png", width:100%),
+  caption: [SonarQube Issues before refactoring],
+) <sq-iss-2>
+#figure(
+  image("./assets/sonarqube-issues-3.png", width:100%),
+  caption: [SonarQube Issues before refactoring],
+) <sq-iss-3>
+// #figure(
+//   table(
+//     columns: (auto, auto, auto),
+//     inset: 10pt,
+//     align: horizon,
+//     table.header(
+//       [*Metric*], [*Value*], [*Implication*],
+//     ),
+//     [Cyclomatic Complexity], [5], [Moderate complexity.],
+//     [Code Duplication], [10%], [High code duplication.],
+//   ),
+//   caption: [Code Metrics Extracted from the RSS Reader],
+// )
 
 == Implications Discussions
 
 = Task 3: Refactoring
 
 == Addressing Design Smells
+We discovered many design smells using Designite, and we refactored few of them; however, some were false positives. 
+
+#figure(
+  image("./assets/designite.png", width:90%),
+  caption: [Design smells given by Designite],
+) <designite>
+
+Following were the design smells we addressed: 
+
+https://github.com/SE-course-serc/project-1-team-17/issues?q=is%3Aissue
 
 // === Refactoring Strategy
 
@@ -354,21 +385,14 @@ Extracted Metrics
 // ) <example-1>
 
 == Code Metrics Post Refactoring
-
 #figure(
-  table(
-    columns: (auto, auto, auto),
-    inset: 10pt,
-    align: horizon,
-    table.header(
-      [*Metric*], [*Value*], [*Implication*],
-    ),
-    [Cyclomatic Complexity], [3], [Reduced complexity.],
-    [Code Duplication], [5%], [Reduced code duplication.],
-  ),
-  caption: [Code Metrics Post Refactoring],
-)
-
+  image("./assets/codemr-c3-af.png", height:50%),
+  caption: [C3 after refactoring],
+) <c3-af>
+#figure(
+    image("./assets/codemr-metrics-af.png", height:70%),
+    caption: [Metrics after refactoring],
+  ) <metrics-af>
 == Leveraging LLMs for Refactoring
 
 *LLM based Refactoring Analysis*
@@ -392,7 +416,7 @@ Extracted Metrics
 Following are the contributions made by the team:
 #let team = ("Sanket", "Priyank", "Aditya", "Nitheesh", "Yash")
   - UML Design: #team.at(0), #team.at(1), #team.at(2), #team.at(3), #team.at(4)
-  - Identifying Smells:
+  - Identifying Smells: 
   - Code Metrics:
   - Manual Refactoring:
   - LLM Refactoring:
