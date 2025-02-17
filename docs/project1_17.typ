@@ -561,7 +561,7 @@ Following are the contributions made by the team:
   - Code Metrics: #team.at(0), #team.at(3)
   - Manual Refactoring: #team.at(0), #team.at(2)
   - LLM Refactoring: #team.at(1), #team.at(2)
-  - Automating Refactoring: #team.at(3)
+  - Automating Refactoring: #team.at(3), #team.at(0)
   - Documentation: #team.at(0), #team.at(1), #team.at(3)
 
 #pagebreak()
