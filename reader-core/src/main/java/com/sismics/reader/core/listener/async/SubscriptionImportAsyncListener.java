@@ -24,6 +24,7 @@ import com.sismics.reader.core.event.SubscriptionImportedEvent;
 import com.sismics.reader.core.model.context.AppContext;
 import com.sismics.reader.core.model.jpa.*;
 import com.sismics.reader.core.service.FeedService;
+import com.sismics.reader.core.service.IFeedService;
 import com.sismics.reader.core.util.EntityManagerUtil;
 import com.sismics.reader.core.util.TransactionUtil;
 import com.sismics.util.mime.MimeType;
@@ -328,6 +329,8 @@ public class SubscriptionImportAsyncListener {
         int i = 0;
         final FeedSubscriptionDao feedSubscriptionDao = new FeedSubscriptionDao();
         final JobEventDao jobEventDao = new JobEventDao();
+        final IFeedService feedService = AppContext.getInstance().getFeedService();
+
         for (Entry<String, List<Outline>> entry : outlineMap.entrySet()) {
             String categoryName = entry.getKey();
             List<Outline> categoryOutlineList = entry.getValue();
@@ -378,7 +381,6 @@ public class SubscriptionImportAsyncListener {
 
                 // Synchronize feed and articles
                 Feed feed = null;
-                final FeedService feedService = AppContext.getInstance().getFeedService();
                 try {
                     feed = feedService.synchronize(feedUrl);
                 } catch (Exception e) {
@@ -433,7 +435,7 @@ public class SubscriptionImportAsyncListener {
         String rssUrl = feed.getRssUrl();
         FeedDao feedDao = new FeedDao();
         Feed feedFromDb = feedDao.getByRssUrl(rssUrl.toString());
-        final FeedService feedService = AppContext.getInstance().getFeedService();
+        final IFeedService feedService = AppContext.getInstance().getFeedService();
         if (feedFromDb == null) {
             try {
                 feedFromDb = feedService.synchronize(rssUrl);
@@ -477,7 +479,7 @@ public class SubscriptionImportAsyncListener {
             // Add new articles to the index
             ArticleCreatedAsyncEvent articleCreatedAsyncEvent = new ArticleCreatedAsyncEvent();
             articleCreatedAsyncEvent.setArticleList(Lists.newArrayList(article));
-            AppContext.getInstance().getAsyncEventBus().post(articleCreatedAsyncEvent);
+            AppContext.getInstance().getEventBusManager().getAsyncEventBus().post(articleCreatedAsyncEvent);
         }
         
         // Check if the user is already subscribed to this article

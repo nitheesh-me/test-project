@@ -18,7 +18,7 @@ import java.util.Set;
  * 
  * @author jtremeaux
  */
-public abstract class BaseResource {
+public class BaseResource {
     /**
      * Injects the HTTP request.
      */
@@ -42,8 +42,8 @@ public abstract class BaseResource {
      * @return True if the user is authenticated and not anonymous
      */
     protected boolean authenticate() {
-        Principal principal = (Principal) request.getAttribute(SecurityFilter.PRINCIPAL_ATTRIBUTE);
-        if (principal != null && principal instanceof IPrincipal) {
+        Principal principal = (Principal) request.getAttribute(SecurityFilter.getPrincipalAttribute());
+        if (principal instanceof IPrincipal) {
             this.principal = (IPrincipal) principal;
             return !this.principal.isAnonymous();
         } else {

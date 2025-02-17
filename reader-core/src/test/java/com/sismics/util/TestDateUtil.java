@@ -20,6 +20,6 @@ public class TestDateUtil {
 
     @Test
     public void parseDateTest() throws Exception {
-        assertNotNull(DateUtil.parseDate("Fri Jan 06 2017 16:13:28 GMT+0900 (JST)", RssReader.DF_RSS));
+        assertNotNull(DateUtil.parseDate("Fri Jan 06 2017 16:13:28 GMT+0900 (JST)", RssReader.getDfRss()));
     }
 }
