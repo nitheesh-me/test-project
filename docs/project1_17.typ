@@ -346,6 +346,36 @@ The system has complexity, tight coupling in some areas, and potential performan
 
 == Implications Discussions
 
+For the identified metrics, the following are their implications in terms of software quality, maintainability, and potential performance issues:
+
+- *Coupling*
+
+  Coupling refers to the degree of interdependence between classes, characterized by various relationships such as attributes, method calls, and inheritance. Tightly coupled systems often lead to a ripple effect of changes, requiring more effort to maintain and making classes harder to reuse due to their dependencies.
+
+- *Lack of Cohesion*
+
+  Lack of cohesion measures how related the methods of a class are to one another. High cohesion is desirable as it enhances software traits like robustness and understandability, while low cohesion indicates that a class may be handling multiple responsibilities, making it difficult to maintain and test.
+
+- *Complexity*
+
+  Complexity reflects how difficult it is to understand the interactions among various entities within the software. Increased complexity raises the risk of unintended interactions, which can lead to defects when changes are made, thereby complicating maintenance and development.
+
+- *Size*
+
+  Size is a traditional metric for software measurement, typically assessed by counting lines of code or methods. A high size count may suggest that a class or method is overloaded with responsibilities, indicating a need for refactoring to improve maintainability.
+
+- *Weighted Method Count*
+
+  The Weighted Method Count (WMC) quantifies the complexity of a class by summing the complexities of its methods. A high WMC can indicate that a class is domain-specific and less reusable, as well as more prone to changes and defects, especially if it inherits many methods from a base class.
+
+- *Lack of Cohesion of Methods (LCOM3)*
+
+  LCOM3 measures the interrelatedness of methods within a class, with low cohesion suggesting that the class is handling multiple responsibilities. High LCOM3 values indicate a need for refactoring, as they imply that the class should be split into smaller, more focused subclasses to enhance understandability and maintainability.
+
+- *C3*
+
+  C3 is a composite metric that captures the maximum values of coupling, cohesion, and complexity within a class. This metric provides a holistic view of a class's design quality, helping to identify potential areas for improvement in software architecture.
+
 = Task 3: Refactoring
 
 == Addressing Design Smells
@@ -393,44 +423,156 @@ https://github.com/SE-course-serc/project-1-team-17/issues?q=is%3Aissue
     image("./assets/codemr-metrics-af.png", height:70%),
     caption: [Metrics after refactoring],
   ) <metrics-af>
+
+== Analysis of Code Metrics after Refactoring
+
+After refactoring the code, we observed noticeable improvements in most of the code metrics. Many of the issues related to design smells were addressed, and adherence to clean code practices and SOLID principles resulted in enhanced maintainability and readability. This overall trend aligns with our expectations, as better design usually reduces complexity and coupling while increasing cohesion.
+
+However, not all metrics showed improvement; some tradeoffs became evident during the refactoring process. For instance, while complexity and cohesion improved overall, certain changes led to a slight increase in size or coupling in specific areas. This outcome is not uncommon since optimizing one aspect of the code can sometimes impact another. In summary, although most metrics improved it is rare to see an all over enhancement in every metric due to inevitable tradeoffs in software architecture.
+  
 == Leveraging LLMs for Refactoring
 
 *LLM based Refactoring Analysis*
 
-- Manual Refactoring vs LLM based suggestions.
-- Accuracy and efficiency of LLM suggestions.
+We utilized DeepSeek to refactor one of the design smells we identified and compared the results with our manual refactoring. We addressed the design smell manually in this issue: https://github.com/SE-course-serc/project-1-team-17/issues/7, and below are the suggestions provided by DeepSeek:
+
+#set quote(block: true)
+#quote(attribution: [DeepSeek])[
+  *Suggested Refactoring Approach:*
+
+    + Encapsulate Event Bus Management:
+
+        - Create `EventBusManager` to handle event bus creation and listener registration, but encapsulate event posting behind methods.
+
+        - Use interfaces for event buses to enable easier mocking in tests.
+
+    + Improve `AsyncTaskManager`:
+
+        - Centralize thread pool configuration and enforce lifecycle management (e.g., `PreDestroy` hooks for shutdown).
+
+        - Use distinct executors for different event types (mail, imports) with appropriate configurations.
+
+    + Simplify `AppContext`:
+
+        - Remove all event bus/async logic; delegate entirely to `EventBusManager` and `AsyncTaskManager`.
+
+        - Use constructor injection for dependencies instead of a static `initialize` method.
+        
+    + Code Modernization:
+
+        - Use Java’s `Executors` utilities for thread pools.
+
+        - Replace legacy `Lists.newArrayList()` with modern new `ArrayList<>()`.
+]
+
+#quote(attribution: [DeepSeek])[
+  *Example Refactored Code Snippets:*
+  
+  ```// EventBusManager.java (simplified)
+public class EventBusManager {
+    private final EventBus asyncEventBus;
+    private final EventBus mailEventBus;
+
+    public EventBusManager(AsyncTaskManager taskManager) {
+        this.asyncEventBus = new AsyncEventBus(taskManager.createExecutor("async"));
+        this.mailEventBus = new AsyncEventBus(taskManager.createExecutor("mail"));
+        registerListeners();
+    }
+
+    private void registerListeners() {
+        asyncEventBus.register(new ArticleCreatedAsyncListener());
+        // ... other listeners
+    }
+
+    // Encapsulate posting events:
+    public void postAsyncEvent(Object event) {
+        asyncEventBus.post(event);
+    }
+}```
+
+```
+// AsyncTaskManager.java
+public class AsyncTaskManager {
+    private final Map<String, ExecutorService> executors = new ConcurrentHashMap<>();
+
+    public ExecutorService createExecutor(String type) {
+        ExecutorService executor = Executors.newFixedThreadPool(2); // Example config
+        executors.put(type, executor);
+        return executor;
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        executors.values().forEach(ExecutorService::shutdown);
+    }
+}
+```
+
+```
+// AppContext.java (minimalist)
+public class AppContext {
+    private final FeedService feedService;
+    private final EventBusManager eventBusManager;
+
+    public AppContext(FeedService feedService, EventBusManager eventBusManager) {
+        this.feedService = feedService;
+        this.eventBusManager = eventBusManager;
+    }
+
+    // No static initialization logic; use DI.
+}
+```
+]
+
+*Comparison with Our Version*
+
+#figure(
+  table(
+    columns: (auto, auto, auto),
+    inset: 5pt,
+    align: horizon,
+    table.header(
+      [*Aspect*], [*Our Version*], [*Suggested Version*],
+    ),
+    [Clarity], [Clear separation via `EventBusManager` and `AsyncTaskManager`], [Enhanced by encapsulating event posting (e.g., `postAsyncEvent()` vs. exposing buses).],
+    [Conciseness], [Direct but exposes internal event buses (e.g., `getAsyncEventBus()`)], [More concise API surface; clients don’t interact directly with Guava classes.],
+    [Best Practices],[Follows SRP but uses static initialization.],[Uses constructor injection and lifecycle hooks (e.g., `PreDestroy` for shutdown).],
+    [Testability],[Relies on \ `AppContext.getInstance()`, which is harder to mock],[Constructor injection allows easier mocking in unit tests.],
+    [Resource Management],[Manually calls \ `waitForAsyncCompletion()`],[Automates shutdown via `PreDestroy` and consolidates executors by type.]
+  ),
+  caption: [Comparison b/w our vs LLM refactoring],
+)
 
 == Automation of Refactoring Pipeline
+#todo("Automated Pipeline to be done @Nitheesh")
+// - Automated Design Smell Detection
+// - Github Actions Pipeline for Continuous Refactoring
 
-- Automated Design Smell Detection
-- Github Actions Pipeline for Continuous Refactoring
+// = Conclusion
 
-= Conclusion
-
-...
-
-#bibliography("refs.bib")
+// #bibliography("refs.bib")
 
 = Acknowledgements
 == Contributions
 Following are the contributions made by the team:
 #let team = ("Sanket", "Priyank", "Aditya", "Nitheesh", "Yash")
   - UML Design: #team.at(0), #team.at(1), #team.at(2), #team.at(3), #team.at(4)
-  - Identifying Smells: 
-  - Code Metrics:
-  - Manual Refactoring:
-  - LLM Refactoring:
-  - Automating Refactoring:
+  - Identifying Smells: #team.at(0), #team.at(1), #team.at(2)
+  - Code Metrics: #team.at(0), #team.at(3)
+  - Manual Refactoring: #team.at(0), #team.at(2)
+  - LLM Refactoring: #team.at(1), #team.at(2)
+  - Automating Refactoring: #team.at(3)
+  - Documentation: #team.at(0), #team.at(1), #team.at(3)
 
 #pagebreak()
 #set heading(numbering: none)
 = Appendices
 
-== Appendix A: AI Prompt Screenshots
+// == Appendix A: AI Prompt Screenshots
 
-Checkout content at #link("./prompts.md")[
-  Prompts file
-]
+// Checkout content at #link("./prompts.md")[
+//   Prompts file
+// ]
 
 #page(width: 25cm, height: 150cm, margin:1em)[
   == Appendix B: Additional UML Diagrams
