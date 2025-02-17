@@ -13,31 +13,31 @@
       name: "Sanket Adlak",
       id: "2024204005",
       address: "team-17 (P90)",
-      email: "sanket.adlak@students.iiit.ac.in"
+      // email: "sanket.adlak@students.iiit.ac.in"
      ),
      (
       name: "Priyank Nagarnaik",
       id: "2024204011",
       address: "team-17 (P90)",
-      email: "priyank.nagarnaik@students.iiit.ac.in"
+      // email: "priyank.nagarnaik@students.iiit.ac.in"
     ),
     (
       name: "Aditya Singh Rathore",
       id: "2024204012",
       address: "team-17 (P90)",
-      email: "aditya.sing@students.iiit.ac.in"
+      // email: "aditya.sing@students.iiit.ac.in"
     ),
     (
       name: "Yash Sonkar",
       id: "2024801001",
       address: "team-17 (P90)",
-      email: "yash.sonkar@research.iiit.ac.in"
+      // email: "yash.sonkar@research.iiit.ac.in"
     ),
     (
       name: "Nitheesh Chandra",
       id: "2024801002",
       address: "team-17 (P90)",
-      email: "nitheeshchandra.y@research.iiit.ac.in"
+      // email: "nitheeshchandra.y@research.iiit.ac.in"
     ),
   ),
   title: [Reverse Engineering and Refactoring of \ Rudra's Subscription Service],
@@ -241,29 +241,15 @@ As per @user-management we can observe that ...
     - *Separation of Concerns:*
         - The system separates concerns like data access (DAO), business logic (services), and presentation (web resources). For example, `ArticleDao` handles database operations, while `ArticleResource` handles web requests.
 
-    - *Extensibility:*
-        - The use of interfaces (e.g., `IPrincipal`) and abstract classes (e.g., `BaseDao`) allows for easy extension and customization. New functionalities can be added without modifying existing code.
-
     - *Event-Driven Architecture:*
         - The system uses events (e.g., `ArticleCreatedAsyncEvent`, `FaviconUpdateRequestedEvent`) to handle asynchronous tasks, which improves scalability and decouples components.
-
-    - *Security:*
-        - The system has a robust security layer with filters like `SecurityFilter` and `TokenBasedSecurityFilter`, ensuring that only authenticated users can access certain resources.
-
-    - *Validation and Error Handling:*
-        - The system includes comprehensive validation (e.g., `ValidationUtil`) and exception handling (e.g., `ClientException`, `ForbiddenException`), which ensures data integrity and provides meaningful error messages to users.
 
     - *Database and ORM Integration:*
         - The system uses JPA (Java Persistence API) for database interactions, which simplifies database operations and ensures consistency. The `BaseDao` class provides a common interface for CRUD operations.
 
-    - *Asynchronous Processing:*
-        - The system supports asynchronous processing through listeners (e.g., `ArticleCreatedAsyncListener`), which improves performance by offloading tasks to background threads.
-
     - *Localization and Internationalization:*
         - The system supports multiple locales (e.g., `LocaleUtil`), making it adaptable to different languages and regions.
 
-    - *Logging and Monitoring:*
-        - The system includes logging mechanisms (e.g., `LogCriteria`, `MemoryAppender`) for monitoring and debugging, which is crucial for maintaining system health.
 
 *WEAKNESSES*
 
@@ -271,7 +257,7 @@ As per @user-management we can observe that ...
         - The system is quite complex, with many layers (e.g., DAO, services, resources) and dependencies. This complexity can make it difficult for new developers to understand and contribute to the codebase.
 
     - *Tight Coupling in Some Areas:*
-        - While the system generally follows good design principles, there are areas where components are tightly coupled. For example, some classes directly create instances of other classes (e.g., `AdblockUtil` creates `JSEngine`), which can make testing and maintenance harder.
+        - While the system generally follows good design principles, there are areas where components are tightly coupled. For example, some classes directly create instances of other classes, which can make testing and maintenance harder.
 
     - *Potential Performance Bottlenecks:*
         - The system relies heavily on database operations and synchronous processing in some areas (e.g., `FeedService`), which could lead to performance bottlenecks, especially under heavy load.
@@ -279,28 +265,19 @@ As per @user-management we can observe that ...
     - *Lack of Documentation:*
         - The UML diagram does not provide detailed documentation for each class or method. This lack of documentation can make it difficult to understand the purpose and usage of certain components.
 
-    - *Error Handling in Asynchronous Tasks:*
-        - While the system supports asynchronous processing, the error handling in asynchronous tasks (e.g., `SubscriptionImportAsyncListener`) is not clearly defined. This could lead to unhandled exceptions and system instability.
-
-    - *Dependency on External Libraries:*
-        - The system depends on external libraries (e.g., JPA, Log4j), which could lead to compatibility issues or vulnerabilities if these libraries are not kept up-to-date.
-
     - *Limited Scalability in Some Areas:*
         - Some components, like `FeedService`, may not scale well if the number of feeds or users grows significantly. The system might need to be optimized for large-scale deployments.
 
     - *Hardcoded Values:*
-        - Some classes contain hardcoded values (e.g., `HTTP_TIMEOUT` in `FaviconDownloader`), which reduces flexibility and makes it harder to configure the system for different environments.
+        - Some classes contain hardcoded values, which reduces flexibility and makes it harder to configure the system for different environments.
 
     - *Testing Challenges:*
         - The system's complexity and tight coupling in some areas could make unit testing and integration testing challenging. Mocking dependencies and ensuring test coverage might require significant effort.
 
-    - *Security Risks:*
-        - While the system has a robust security layer, there are potential risks, such as the use of `TrustAllManager` in `CertUtil`, which could expose the system to man-in-the-middle attacks if not properly configured.
 
 *SUMMARY*
 
-The system is well-designed with a clear separation of concerns, robust security, and support for asynchronous processing. However, its complexity, tight coupling in some areas, and potential performance bottlenecks could pose challenges. Improving documentation, reducing hardcoded values, and optimizing for scalability would enhance the system further.
-
+The system has complexity, tight coupling in some areas, and potential performance bottlenecks could pose challenges. Improving documentation, reducing hardcoded values, and optimizing for scalability would enhance the system further.
 
 = Task 2: Design Smells and Code Metrics
 
@@ -314,8 +291,12 @@ The system is well-designed with a clear separation of concerns, robust security
     table.header(
       [*Design Smell*], [*Description*], [*Justification*],
     ),
-    // image("cylinder.svg"),
-    [Feature Envy], [UPDATE: A method in "This" Class accesses another class's data more than its own.], [High coupling between classes.],
+    [Deficient Encapsulation], [This smell occurs when the declared accessibility of one or more members of an abstraction is more permissive than actually required.], [The class fields or methods are not properly encapsulated, leading to potential misuse or unintended access from outside the class.],
+    [Broken Modularization], [This smell arises when data and/or methods that ideally should have been localized into a single abstraction are separated and spread across multiple abstractions], [],
+    [Imperative Abstraction],[This smell arises when an operation is turned into a class],[],
+    [God Class],[This smell occurs when a class is large containing too many variables and methods],[],
+    [Cyclic Dependency],[This smell arises when two or more abstractions depend on each other directly or indirectly],[],
+    [],[],[],
   ),
   caption: [Design Smells Identified in the RSS Reader],
 )
@@ -324,8 +305,7 @@ The system is well-designed with a clear separation of concerns, robust security
 *Tools Used*
 - Sonarqube
 - CodeMR
-- Checkstyle
-- PMD
+- Designite
 
 Extracted Metrics
 
@@ -343,33 +323,35 @@ Extracted Metrics
   caption: [Code Metrics Extracted from the RSS Reader],
 )
 
+== Implications Discussions
+
 = Task 3: Refactoring
 
 == Addressing Design Smells
 
-=== Refactoring Strategy
+// === Refactoring Strategy
 
-#codly(number-format: none)
-```diff
-@@ -29,26 +51,10 @@ public class FaviconUpdateRequestedAsyncListener {
-      */
-     @Subscribe
-     public void onFaviconUpdateRequested(final FaviconUpdateRequestedEvent faviconUpdateRequestedEvent) throws Exception {
--        if (log.isInfoEnabled()) {
--            log.info(MessageFormat.format("Favicon update requested event: {0}", faviconUpdateRequestedEvent.toString()));
--        }
--
-+
-+        logFaviconRequest(faviconUpdateRequestedEvent);
-+
-```
+// #codly(number-format: none)
+// ```diff
+// @@ -29,26 +51,10 @@ public class FaviconUpdateRequestedAsyncListener {
+//       */
+//      @Subscribe
+//      public void onFaviconUpdateRequested(final FaviconUpdateRequestedEvent faviconUpdateRequestedEvent) throws Exception {
+// -        if (log.isInfoEnabled()) {
+// -            log.info(MessageFormat.format("Favicon update requested event: {0}", faviconUpdateRequestedEvent.toString()));
+// -        }
+// -
+// +
+// +        logFaviconRequest(faviconUpdateRequestedEvent);
+// +
+// ```
 
-Or
+// Or
 
-#figure(
-  image("./assets/iiith.png", width: 40%),
-  caption: [Example 1],
-) <example-1>
+// #figure(
+//   image("./assets/iiith.png", width: 40%),
+//   caption: [Example 1],
+// ) <example-1>
 
 == Code Metrics Post Refactoring
 
@@ -406,7 +388,15 @@ Or
 #bibliography("refs.bib")
 
 = Acknowledgements
-
+== Contributions
+Following are the contributions made by the team:
+#let team = ("Sanket", "Priyank", "Aditya", "Nitheesh", "Yash")
+  - UML Design: #team.at(0), #team.at(1), #team.at(2), #team.at(3), #team.at(4)
+  - Identifying Smells:
+  - Code Metrics:
+  - Manual Refactoring:
+  - LLM Refactoring:
+  - Automating Refactoring:
 
 #pagebreak()
 #set heading(numbering: none)
