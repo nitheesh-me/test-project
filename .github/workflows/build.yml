@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - refactoring
+  workflow_dispatch:
 
 
 jobs:
