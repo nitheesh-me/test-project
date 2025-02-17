@@ -1,39 +1,12 @@
-name: Build
-
+name: Design Smell Analysis
 on:
   push:
-    branches:
-      - refactoring
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
-
 jobs:
-  code-smells:
-    name: Designate analysis
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build with Maven
-        run: mvn clean compile
-      - name: Download DesigniteJava
-        run: wget "https://www.designite-tools.com/assets/DesigniteJava.jar"
-      - name: Analyze project with DesigniteJava
-        run: |
-          java -jar DesigniteJava.jar -ci -repo ${{ github.repository }} -pat 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 -o designite_output
-      - name: Upload DesigniteJava analysis results
-        uses: actions/upload-artifact@v4
-        with:
-          name: my-artifact
-          path: designite_output
-      - name: Output artifact ID
-        run: echo "The artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}"
-
   detect_and_refactor_smells:
     permissions:
       contents: write
