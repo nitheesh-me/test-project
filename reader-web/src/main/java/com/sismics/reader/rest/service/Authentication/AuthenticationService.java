@@ -59,7 +59,7 @@ public class AuthenticationService {
      * @return True if the user has the base function
      */
     public boolean hasBaseFunction(BaseFunction baseFunction) throws JSONException {
-        if (!(principal instanceof UserPrincipal)) {
+        if (!(getPrincipal() instanceof UserPrincipal)) {
             return false;
         }
         Set<String> baseFunctionSet = ((UserPrincipal) principal).getBaseFunctionSet();
