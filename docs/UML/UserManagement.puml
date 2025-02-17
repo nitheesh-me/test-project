@@ -1,0 +1,170 @@
+@startuml
+title User Management Subsystem
+
+'-= Resource Layer =-
+package "Resource Layer" {
+    class BaseResource {
+        +authenticate(): boolean
+        +hasBaseFunction(func: BaseFunction): boolean
+    }
+
+    class UserResource extends BaseResource {
+        +register(username: String, ...): Response
+        +update(...): Response
+        +login(...): Response
+        +logout(): Response
+        +delete(): Response
+        +info(): Response
+        +list(...): Response
+    }
+}
+
+'-= Data Access Layer =-
+package "DAO Layer" {
+    class UserDao {
+        +authenticate(username: String, password: String): String
+        +create(user: User): String
+        +update(user: User): User
+        +updatePassword(user: User): User
+        +getById(id: String): User
+        +getActiveByUsername(username: String): User
+        +delete(username: String): void
+        -hashPassword(password: String): String
+    }
+
+    class AuthenticationTokenDao {
+        +get(id: String): AuthenticationToken
+        +create(token: AuthenticationToken): String
+        +delete(id: String): void
+        +deleteOldSessionToken(userId: String): void
+        +updateLastConnectionDate(id: String): void
+    }
+}
+
+'-= Model Layer =-
+package "Model Layer" {
+    class User {
+        -id: String
+        -localeId: String
+        -roleId: String
+        -username: String
+        -password: String
+        -email: String
+        -theme: String
+        -displayTitleWeb: boolean
+        -displayTitleMobile: boolean
+        -displayUnreadWeb: boolean
+        -displayUnreadMobile: boolean
+        -narrowArticle: boolean
+        -firstConnection: boolean
+        -createDate: Date
+        -deleteDate: Date
+        +getters()
+        +setters()
+    }
+
+    class AuthenticationToken {
+        -id: String
+        -userId: String
+        -longLasted: boolean
+        -creationDate: Date
+        -lastConnectionDate: Date
+        +getters()
+        +setters()
+    }
+
+    class UserCreatedEvent {
+        -user: User
+        +getUser(): User
+        +setUser(user: User): void
+    }
+}
+
+'-= Security Layer =-
+package "Security Layer" {
+    interface IPrincipal {
+        +isAnonymous(): boolean
+        +getId(): String
+        +getLocale(): Locale
+        +getDateTimeZone(): DateTimeZone
+        +getEmail(): String
+        +getName(): String
+    }
+
+    class UserPrincipal implements IPrincipal {
+        -id: String
+        -name: String
+        -locale: Locale
+        -dateTimeZone: DateTimeZone
+        -email: String
+        -baseFunctionSet: Set<String>
+        +UserPrincipal(id: String, name: String)
+        +setters()
+        +getters()
+    }
+
+    class AnonymousPrincipal implements IPrincipal {
+        -locale: Locale
+        -dateTimeZone: DateTimeZone
+        +AnonymousPrincipal()
+        +setters()
+    }
+
+    enum BaseFunction {
+        ADMIN
+        PASSWORD
+        IMPORT
+    }
+
+    abstract class SecurityFilter {
+        #PRINCIPAL_ATTRIBUTE: String
+        +doFilter(req: ServletRequest, res: ServletResponse, chain: FilterChain)
+        #abstract authenticate(request: HttpServletRequest): User
+        #injectUser(request: HttpServletRequest, user: User)
+        #injectAuthenticatedUser(request: HttpServletRequest, user: User)
+        #injectAnonymousUser(request: HttpServletRequest)
+    }
+
+    class TokenBasedSecurityFilter extends SecurityFilter {
+        +COOKIE_NAME: String
+        +TOKEN_LONG_LIFETIME: int
+        +TOKEN_SESSION_LIFETIME: int
+        #authenticate(request: HttpServletRequest): User
+    }
+
+    class HeaderBasedSecurityFilter extends SecurityFilter {
+        -enabled: boolean
+        +AUTHENTICATED_USER_HEADER: String
+        #authenticate(request: HttpServletRequest): User
+    }
+}
+
+'-= Utility Layer =-
+package "Utility Layer" {
+    class ValidationUtil {
+        +validateTheme(...): String
+        +validateLocale(...): String
+    }
+}
+
+'-= Relationships =-
+UserResource --> UserDao : uses
+UserResource --> AuthenticationTokenDao : uses
+UserResource --> ValidationUtil : uses
+UserResource --> UserCreatedEvent : raises
+UserDao --> User : manages
+AuthenticationTokenDao --> AuthenticationToken : manages
+User "1" *-- "0..*" AuthenticationToken : has >
+UserPrincipal ..|> IPrincipal : realizes
+AnonymousPrincipal ..|> IPrincipal : realizes
+TokenBasedSecurityFilter --|> SecurityFilter
+HeaderBasedSecurityFilter --|> SecurityFilter
+SecurityFilter --> UserDao : uses >
+TokenBasedSecurityFilter --> AuthenticationTokenDao : uses >
+UserPrincipal --> BaseFunction : via roleId
+UserDao --> BCrypt : uses
+SecurityFilter --> LocaleUtil : uses
+UserDao --> UserMapper : uses
+UserResource --> RoleBaseFunctionDao : uses
+
+@enduml

@@ -1,0 +1,566 @@
+@startuml
+class IndexingService extends AbstractScheduledService {
+    private Logger log
+    private Directory directory
+    private DirectoryReader directoryReader
+    private String luceneStorageConfig
+
+    public IndexingService(String luceneStorageConfig) // Constructor
+    protected void startup()
+    protected void shutDown()
+    protected void runOneIteration()
+    protected Scheduler scheduler()
+    public PaginatedList<UserArticleDao> searchArticles(String userId, String searchQuery, Integer offset, Integer limit)
+    public void rebuildIndex()
+}
+
+class UserArticleDao extends BaseDao {
+    protected QueryParam getQueryParam(UserArticleCriteria criteria, FilterCriteria filterCriteria)
+    public String create(UserArticle userArticle)
+    public UserArticle update(UserArticle userArticle)
+    public void markAsRead(UserArticleCriteria criteria)
+    public void delete(String id)
+    public UserArticle getUserArticle(String id, String userId)
+}
+
+class UserArticleCriteria {
+    private String userId
+    private String feedId
+    private boolean visible
+    private boolean subscribed
+    private String feedSubscriptionId
+    private String categoryId
+    private boolean unread
+    private boolean starred
+    private String articleId
+    private List<String> articleIdIn
+    private String userArticleId
+    private Date articlePublicationDateMax
+    private Date userArticleStarredDateMax
+    private String userArticleIdMax
+    private boolean fetchAllFeedSubscription
+}
+class SortCriteria {
+    private int column
+    private boolean asc
+    private String sortQuery
+
+    public SortCriteria(String sortQuery)
+    public SortCriteria(Integer column, Boolean asc)
+    public boolean isAsc()
+}
+
+class FilterCriteria {
+    private List<FilterColumn> filterColumnList
+}
+
+class UserArticleDto {
+    private String id
+    private Long readTimestamp
+    private Long starTimestamp
+    private String feedTitle
+    private String feedSubscriptionId
+    private String feedSubscriptionTitle
+    private String articleId
+    private String articleGuid
+    private String articleTitle
+    private String articleCreator
+    private String articleCommentUrl
+    private Integer articleCommentCount
+    private String articleEnclosureUrl
+    private Integer articleEnclosureUrl
+    private String articleEnclosureType
+    private Long articlePublicationTimestamp
+}
+
+class ArticleDto {
+    private String id
+    private String url
+    private String guid
+    private String title
+    private String creator
+    private String description
+    private String commentUrl
+    private Integer commentCount
+    private String enclosureUrl
+    private Integer enclosureCount
+    private String enclosureType
+    private Date publicationDate
+    private Date createDate
+    private String feedId
+}
+
+class ArticleDao {
+    public void rebuildIndex(final List<Article> articleList)
+    public void create(final List<Article> articleList)
+    public void update(final List<Article> articleList)
+    public void delete(final List<Article> articleList)
+    public Map<String, Article> search(PaginatedList<UserArticleDto> paginatedList, String searchQuery)
+    private org.apache.lucene.document.Document getDocumentFromArticle(Article article)
+}
+
+class RebuildIndexAsyncEvent {
+    public String toString()
+}
+
+class AppContext {
+    private AppContext instance
+    private EventBus eventBus
+    private EventBus asyncEventBus
+    private EventBus mailEventBus
+    private EventBus importEventBus
+    private FeedService feedService
+    private IndexingService indexingService
+    private List<ExecutorService> asyncExecutorList
+
+    private void resetEventBus()
+    public static AppContext getInstance()
+    public void waitForAsync()
+}
+class Article {
+    private String id
+    private String feedId
+    private String url
+    private String baseUri
+    private String guid
+    private String title
+    private String creator
+    private String description
+    private String commentUrl
+    private Integer commentCount
+    private String enclosureUrl
+    private Integer enclosureLength
+    private String enclosureType
+    private Date publicationDate
+    private Date createDate
+    private Date deleteDate
+}
+
+class UserArticle {
+    private String id
+    private String userId
+    private String articleId
+    private Date createDate
+    private Date readDate
+    private Date starredDate
+    private Date deleteDate
+
+    public String toString()
+}
+class DirectoryUtil {
+    public static File getBaseDataDirectory()
+    public static File getDbDirectory()
+    public static File getFaviconDirectory()
+    public static File getLuceneDirectory()
+    public static File getLogDirectory()
+    private static File getDataSubDirectory(String subdirectory)
+}
+class TransactionUtil {
+    public static void handle(Runnable runnable)
+    public static void commit()
+}
+class PaginatedList {
+    private int limit
+    private int offset
+    private int resultCount
+    private List<T> resultList
+
+    public PaginatedList(int pageSize, int offset)
+}
+class PaginatedLists {
+    private final int DEFAULT_PAGE_SIZE
+    private final int MAX_PAGE_SIZE
+
+    public static <E> PaginatedList<E> create(Integer pageSize, Integer offset)
+    public static <E> PaginatedList<E> create()
+    public static <E> List<E> executeQuery(QueryParam queryParam)
+    public static <E> void executePaginatedQuery(PaginatedList<E> paginatedList, QueryParam queryParam, SortCriteria sortCriteria)
+    private static String getQueryString(QueryParam queryParam)
+    private static <E> void executeCountQuery(PaginatedList<E> paginatedList, QueryParam queryParam)
+    private static String getNativeCountQuery(QueryParam queryParam)
+    private static <E> void executeResultQuery(PaginatedList<E> paginatedList, QueryParam queryParam)
+    private static String getOrderByClause(SortCriteria sortCriteria)
+    private static void mapQueryParam(Query query, QueryParam queryParam)
+    private static void mapFilterColumn(Query query, QueryParam queryParam)
+}
+
+class ThreadLocalContext {
+    public static final ThreadLocal threadLocalContext
+    private EntityManager entityManager
+
+    private ThreadLocalContext()
+    public static ThreadLocalContext get()
+    public void cleanup()
+    public boolean isInTransactionalContext()
+}
+
+class FeedSubscriptionCriteria {
+    private String id
+    private String userId
+    private String feedId
+    private String categoryId
+    private String feedUrl
+    private boolean unread
+}
+
+class ArticleCriteria {
+    private String id
+    private List<String> guidIn
+    private String title
+    private String url
+    private Date publicationDateMin
+    private String feedId
+}
+
+class QueryParam {
+    private String queryString
+    private List<String> criteriaList
+    private SortCriteria sortCriteria
+    private Map<String, Object> parameterMap
+    private FilterCriteria filterCriteria
+    private List<String> groupByList
+    private ResultMapper resultMapper
+}
+abstract class FilterColumn {
+    protected String column
+    protected String filter
+
+    public abstract String getPredicate()
+    public abstract Object getParamValue()
+    public String getParamName()
+    public boolean hasParam()
+}
+
+abstract class BaseDao<T, C> {
+    public void findByCriteria(PaginatedList<T> list, C criteria, SortCriteria sortCriteria, FilterCriteria filterCriteria)
+    public List<T> findByCriteria(C criteria, SortCriteria sortCriteria, FilterCriteria filterCriteria)
+    public List<T> findByCriteria(C criteria)
+    public T findFirstByCriteria(C criteria)
+
+    protected abstract QueryParam getQueryParam(C criteria, FilterCriteria filterCriteria)
+}
+
+class EMF {
+    private static Map<Object, Object> properties
+    private static EntityManagerFactory emfInstance
+
+    private static Map<Object, Object> getEntityManagerProperties()
+    private static Map<Object, Object> getEntityManagerPropertiesFromEnvironment()
+    public static EntityManagerFactory get()
+    public static boolean isDriverHsql()
+    public static boolean isDriverPostgresql()
+    public static String getDriver()
+}
+
+class EnvironmentUtil {
+    private static String OS
+    private static String TEST_ENV
+    private static String WINDOWS_APPDATA
+    private static String MAC_OS_USER_HOME
+    private static String READER_HOME
+    private static String APPLICATION_LOG_ENABLED
+    private static String SSL_TRUST_ALL
+    private static String HIBERNATE_PROPERTIES
+    private static boolean webappContext
+
+    public static boolean isWindows()
+    public static boolean isMacOs()
+    public static boolean isUnix()
+    public static boolean isUnitTest()
+    public static String getWindowsAppData()
+    public static String getMacOsUserHome()
+    public static String getReaderHome()
+    public static String getHibernateProperties()
+    public static boolean isApplicationLogEnabled()
+    public static boolean isSslTrustAll()
+    public static boolean isWebappContext()
+    public static void setWebappContext(boolean webappContext)
+}
+
+class ResourceUtil {
+    public static List<String> list(Class<?> clazz, String path, FilenameFilter filter)
+    public static List<String> list(Class<?> clazz, String path)
+    public static Map<Object, Object> loadPropertiesFromUrl(URL url)
+}
+
+enum ConfigType {
+    LUCENE_DIRECTORY_STORAGE
+}
+class ArticleCreatedAsyncListener {
+    public void onArticleCreated(ArticleCreatedAsyncEvent articlesCreatedAsyncEvent)
+}
+
+class ArticleCreatedAsyncEvent {
+    private List<Article> articleList
+
+    public String toString()
+}
+
+class ArticleDeletedAsyncListener {
+    public void onArticleDeleted(ArticleDeletedAsyncEvent articlesDeletedAsyncEvent)
+}
+
+class ArticleDeletedAsyncEvent {
+    private List<Article> articleList
+
+    public String toString()
+}
+
+class ArticleUpdatedAsyncListener {
+    public void onArticleUpdated(ArticleUpdatedAsyncEvent articlesUpdatedAsyncEvent)
+}
+
+class ArticleUpdatedAsyncEvent {
+    private List<Article> articleList
+
+    public String toString()
+}
+class FaviconUpdateRequestedAsyncListener {
+    public void onFaviconUpdateRequested(FaviconUpdateRequestedEvent faviconUpdateRequestedEvent)
+}
+
+class FaviconUpdateRequestedEvent {
+    private Feed feed
+
+    public String toString()
+}
+
+class RebuildIndexAsyncListener {
+    public void onArticleCreated(RebuildIndexAsyncEvent rebuildIndexAsyncEvent)
+}
+
+class SubscriptionImportAsyncListener {
+    private static final String FILE_STARRED_JSON
+    private static final String FILE_SUBSCRIPTIONS_XML
+
+    public void onSubscriptionImport(SubscriptionImportedEvent subscriptionImportedEvent)
+    private Job createJob(User user, File importFile)
+    private Long getFeedCount(List<Outline> outlineList)
+    private void processImportFile(User user, File importFile, Job job)
+    private void importOutline(User user, List<Outline> outlineList, Job job)
+    private void importFeedFromStarred(User user, Feed feed, Article article)
+}
+
+class SubscriptionImportedEvent {
+    private User user
+    private File importFile
+
+    public String toString()
+}
+
+class DeadEventListener {
+    public void onDeadEvent(DeadEvent deadEvent)
+}
+
+class EntityManagerUtil {
+    public static void flush()
+}
+
+class FeedSubscriptionDto {
+    private String id
+    private String feedSubscriptionTitle
+    private String feedTitle
+    private String userId
+    private String feedId
+    private String feedRssUrl
+    private String feedUrl
+    private String feedDescription
+    private Integer unreadUserArticleCount
+    private Integer synchronizationFailCount
+    private Date createDate
+    private String categoryId
+    private String categoryParentId
+    private String categoryName
+    private boolean categoryFolded
+}
+
+class OpmlFlattener {
+    public Map<String, List<Outline>> flatten(List<Outline> outlineList)
+    private void flatten(List<Outline> outlineTree, Map<String, List<Outline>> outlineMap, String prefix)
+    private String getPrefix(Outline outline, String prefix)
+}
+
+class StarredReader {
+    private StarredArticleImportedListener starredArticleImportedListener
+
+    public void read(InputStream is)
+}
+
+class GuidFixer {
+    public void fixGuid(Article article)
+}
+
+class User {
+    private String id
+    private String localeId
+    private String roleId
+    private String username
+    private String password
+    private String email
+    private String theme
+    private boolean displayTitleWeb
+    private boolean displayTitleMobile
+    private boolean displayUnreadWeb
+    private boolean displayUnreadMobile
+    private boolean narrowArticle
+    private boolean firstConnection
+    private Date createDate
+    private Date deleteDate
+}
+
+class Feed {
+    private String id
+    private String rssUrl
+    private String url
+    private String baseUri
+    private String title
+    private String language
+    private String description
+    private Date createDate
+    private Date lastFetchDate
+    private Date deleteDate
+}
+
+class Config {
+    private ConfigType id
+    private String value
+}
+
+class Outline {
+    private String text
+    private String title
+    private String type
+    private String xmlUrl
+    private String htmlUrl
+    private List<Outline> outlineList
+}
+
+class OpmlReader {
+    private String content
+    private Outline rootOutline
+    private Outline currentOutline
+    private enum Element
+    private Element currentElement
+    private Stack<Element> elementStack
+    private Stack<Outline> outlineStack
+
+    public void read(InputStream is)
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
+    public void endElement(String uri, String localName, String qName)
+    private void pushElement(Element newElement)
+    private void popElement()
+    public void characters(char[] ch, int start, int length)
+    public List<Outline> getOutlineList()
+}
+
+enum Element  {
+    UNKNOWN, OPML, BODY, OUTLINE
+}
+
+IndexingService --> DirectoryUtil
+IndexingService --> TransactionUtil
+IndexingService --> "*" UserArticleDto
+IndexingService --> UserArticleCriteria
+IndexingService --> Article
+IndexingService --> RebuildIndexAsyncEvent
+IndexingService --> "1" ArticleDao
+IndexingService --> "1" AppContext
+IndexingService --> "*" PaginatedList
+IndexingService --> "*" PaginatedLists
+
+PaginatedLists --> ThreadLocalContext
+PaginatedLists --> QueryParam
+PaginatedLists --> FilterColumn
+
+QueryParam --> "1" SortCriteria
+QueryParam --> "*" FilterCriteria
+
+TransactionUtil --> "1" ThreadLocalContext
+
+EMF --> EnvironmentUtil
+EMF --> DirectoryUtil
+EMF --> ResourceUtil
+
+DirectoryUtil --> EnvironmentUtil
+
+AppContext --> ConfigDao
+AppContext --> SubscriptionImportAsyncListener
+AppContext --> FaviconUpdateRequestedAsyncListener
+AppContext --> ArticleUpdatedAsyncListener
+AppContext --> ArticleDeletedAsyncListener
+AppContext --> ArticleCreatedAsyncListener
+AppContext --> RebuildIndexAsyncListener
+AppContext --> DeadEventListener
+AppContext --> Config
+AppContext --> IndexingService
+AppContext --> EnvironmentUtil
+
+ArticleCreatedAsyncListener --> ArticleDao
+ArticleCreatedAsyncListener --> ArticleCreatedAsyncEvent
+ArticleCreatedAsyncListener --> Article
+
+ArticleDeletedAsyncListener --> ArticleDao
+ArticleDeletedAsyncListener --> ArticleDeletedAsyncEvent
+
+ArticleUpdatedAsyncListener --> ArticleDao
+ArticleUpdatedAsyncListener --> ArticleUpdatedAsyncEvent
+
+FaviconUpdateRequestedAsyncListener --> FaviconDownloader
+FaviconUpdateRequestedAsyncListener --> FaviconUpdateRequestedEvent
+FaviconUpdateRequestedAsyncListener --> Feed
+FaviconUpdateRequestedAsyncListener --> DirectoryUtil
+FaviconUpdateRequestedAsyncListener --> TransactionUtil
+
+RebuildIndexAsyncListener --> RebuildIndexAsyncEvent
+
+SubscriptionImportAsyncListener --> StarredReader
+SubscriptionImportAsyncListener --> OpmlFlattener
+SubscriptionImportAsyncListener --> OpmlReader
+SubscriptionImportAsyncListener --> Outline
+SubscriptionImportAsyncListener --> GuidFixer
+SubscriptionImportAsyncListener --> ArticleDto
+SubscriptionImportAsyncListener --> ArticleCriteria
+SubscriptionImportAsyncListener --> ArticleCreatedAsyncEvent
+SubscriptionImportAsyncListener --> FeedSubscriptionCriteria
+SubscriptionImportAsyncListener --> UserArticleCriteria
+SubscriptionImportAsyncListener --> UserArticleDto
+SubscriptionImportAsyncListener --> FeedSubscriptionDto
+SubscriptionImportAsyncListener --> FeedSubscriptionCriteria
+SubscriptionImportAsyncListener --> AppContext
+SubscriptionImportAsyncListener --> EntityManagerUtil
+SubscriptionImportAsyncListener --> TransactionUtil
+SubscriptionImportAsyncListener --> SubscriptionImportedEvent
+SubscriptionImportAsyncListener --> AppContext
+
+
+EntityManagerUtil --> ThreadLocalContext
+
+UserArticleDao --> UserArticle
+UserArticleDao --> UserArticleCriteria
+UserArticleDao --> UserArticleDto
+UserArticleDao --> SortCriteria
+UserArticleDao --> ThreadLocalContext
+UserArticleDao --> BaseDao
+UserArticleDao --> QueryParam
+UserArticleDao --> FilterCriteria
+
+FilterCriteria --> "*" FilterColumn
+
+OpmlFlattener --> "*" Outline
+
+StarredReader --> "1" Article
+StarredReader --> "1" Feed
+
+GuidFixer --> Article
+
+ArticleCreatedAsyncEvent --> "*" Article
+ArticleDeletedAsyncEvent --> "*" Article
+ArticleUpdatedAsyncEvent --> "*" Article
+FaviconUpdateRequestedEvent --> "1" Feed
+SubscriptionImportedEvent --> "1" User
+
+Outline --> "*" Outline
+
+OpmlReader --> "*" Outline
+OpmlReader --> "*" Element
+@enduml
