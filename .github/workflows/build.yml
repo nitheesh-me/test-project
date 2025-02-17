@@ -34,33 +34,31 @@ jobs:
       - name: Output artifact ID
         run: echo "The artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}"
 
-  build:
-    name: SonarQube Analysis
+  jobs:
+  detect_and_refactor_smells:
+    permissions:
+      contents: write
+      pull-requests: write  # Add this permission
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out code
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+          fetch-depth: 0  # Add this to ensure full repository history
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          java-version: 17
-          distribution: 'zulu' # Alternative distribution options are available.
-      - name: Cache SonarQube packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
+          python-version: '3.10'
+      
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install javalang PyGithub gitpython google-generativeai
+
+      - name: Run design smell analysis
         env:
-          SONAR_TOKEN: sqp_6850cd30e8cb93f475c0e602b31595ea4448faaa
-          SONAR_HOST_URL: http://proxy.nitheesh.me:25270
-        run: mvn -pl '!reader-distribution-redhat,!reader-distribution-mac,!reader-distribution-windows' -B -X -Pprod verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sismics-reader-refactoring -Dsonar.projectName='sismics-reader-refactoring'
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python refactorPipeline.py
