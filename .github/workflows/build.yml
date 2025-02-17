@@ -34,7 +34,6 @@ jobs:
       - name: Output artifact ID
         run: echo "The artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}"
 
-  jobs:
   detect_and_refactor_smells:
     permissions:
       contents: write
