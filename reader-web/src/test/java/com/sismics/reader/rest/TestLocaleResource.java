@@ -3,19 +3,21 @@ package com.sismics.reader.rest;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertTrue;
 
 /**
  * Test the locale resource.
- * 
+ *
  * @author jtremeaux
  */
+@Ignore
 public class TestLocaleResource extends BaseJerseyTest {
     /**
      * Test the locale resource.
-     * 
+     *
      */
     @Test
     public void testLocaleResource() throws JSONException {

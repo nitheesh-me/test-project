@@ -20,7 +20,7 @@ public class ThemeDao {
     /**
      * Directory where theme stylesheets can be located.
      */
-    public static final List<String> STYLESHEETS_THEME_DIRS = Lists.newArrayList("/src/stylesheets/theme/", "/stylesheets/theme/");
+    private static final List<String> STYLESHEETS_THEME_DIRS = Lists.newArrayList("/src/stylesheets/theme/", "/stylesheets/theme/");
 
     private final static FilenameFilter CSS_FILTER = (dir, name) -> name.endsWith(".css") || name.endsWith(".less");
 

@@ -29,8 +29,11 @@ public abstract class SecurityFilter implements Filter {
     /**
      * Name of the attribute containing the principal.
      */
-    public static final String PRINCIPAL_ATTRIBUTE = "principal";
+    protected static final String PRINCIPAL_ATTRIBUTE = "principal";
 
+    public static String getPrincipalAttribute() {
+        return PRINCIPAL_ATTRIBUTE;
+    }
     /**
      * Logger.
      */

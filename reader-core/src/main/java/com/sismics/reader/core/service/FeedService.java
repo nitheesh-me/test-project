@@ -15,11 +15,7 @@ import com.sismics.reader.core.dao.jpa.dto.ArticleDto;
 import com.sismics.reader.core.dao.jpa.dto.FeedDto;
 import com.sismics.reader.core.dao.jpa.dto.FeedSubscriptionDto;
 import com.sismics.reader.core.dao.jpa.dto.UserArticleDto;
-import com.sismics.reader.core.event.ArticleCreatedAsyncEvent;
-import com.sismics.reader.core.event.ArticleDeletedAsyncEvent;
-import com.sismics.reader.core.event.ArticleUpdatedAsyncEvent;
-import com.sismics.reader.core.event.FaviconUpdateRequestedEvent;
-import com.sismics.reader.core.model.context.AppContext;
+import com.sismics.reader.core.event.*;
 import com.sismics.reader.core.model.jpa.*;
 import com.sismics.reader.core.util.EntityManagerUtil;
 import com.sismics.reader.core.util.TransactionUtil;
@@ -52,11 +48,16 @@ import java.util.concurrent.TimeUnit;
  *
  * @author jtremeaux 
  */
-public class FeedService extends AbstractScheduledService {
+public class FeedService extends AbstractScheduledService implements IFeedService{
     /**
      * Logger.
      */
     private static final Logger log = LoggerFactory.getLogger(FeedService.class);
+
+    private final EventBusManager eventBusManager = new EventBusManager();
+
+    public FeedService() {
+    }
 
     @Override
     protected void startUp() throws Exception {
@@ -85,6 +86,7 @@ public class FeedService extends AbstractScheduledService {
     /**
      * Synchronize all feeds.
      */
+
     public void synchronizeAllFeeds() {
         List<FeedDto> feedList = getSubscribedFeeds();
         List<FeedSynchronization> feedSynchronizationList = new ArrayList<>();
@@ -138,181 +140,288 @@ public class FeedService extends AbstractScheduledService {
     public Feed synchronize(String url) throws Exception {
         long startTime = System.currentTimeMillis();
         
-        // Parse the feed
+        // Parse the feed and get articles
         RssReader rssReader = parseFeedOrPage(url, true);
         Feed newFeed = rssReader.getFeed();
         List<Article> articleList = rssReader.getArticleList();
-
         completeArticleList(articleList);
 
-        // Get articles that were removed from RSS compared to last fetch
+        // Handle removed articles
+        handleRemovedArticles(articleList);
+
+        // Create or update the feed
+        Feed feed = createOrUpdateFeed(newFeed);
+        
+        // Process articles
+        processArticles(feed, articleList);
+
+        logSyncResults(url, startTime, articleList);
+        
+        return feed;
+    }
+
+    /**
+     * Handle articles that were removed from the feed
+     */
+    private void handleRemovedArticles(List<Article> articleList) {
         List<Article> articleToRemove = getArticleToRemove(articleList);
-        if (!articleToRemove.isEmpty()) {
-            for (Article article : articleToRemove) {
-                // Update unread counts
-                // FIXME count be optimized in 1 query instead of a*s*2
-                List<UserArticleDto> userArticleDtoList = new UserArticleDao()
-                        .findByCriteria(new UserArticleCriteria()
-                                .setArticleId(article.getId())
-                                .setFetchAllFeedSubscription(true) // to test: subscribe another user, u2, read u1, not u2, u1 is decremented anyway
-                                .setUnread(true));
-
-                for (UserArticleDto userArticleDto : userArticleDtoList) {
-                    FeedSubscriptionDto feedSubscriptionDto = new FeedSubscriptionDao().findFirstByCriteria(new FeedSubscriptionCriteria()
-                            .setId(userArticleDto.getFeedSubscriptionId()));
-                    if (feedSubscriptionDto != null) {
-                        new FeedSubscriptionDao().updateUnreadCount(feedSubscriptionDto.getId(), feedSubscriptionDto.getUnreadUserArticleCount() - 1);
-                    }
-                }
-            }
-
-            // Delete articles that don't exist anymore
-            for (Article article: articleToRemove) {
-                new ArticleDao().delete(article.getId());
-            }
-
-            // Removed articles from index
-            ArticleDeletedAsyncEvent articleDeletedAsyncEvent = new ArticleDeletedAsyncEvent();
-            articleDeletedAsyncEvent.setArticleList(articleToRemove);
-            AppContext.getInstance().getAsyncEventBus().post(articleDeletedAsyncEvent);
+        if (articleToRemove.isEmpty()) {
+            return;
         }
 
-        // Create the feed if necessary (not created and currently in use by another user)
+        updateUnreadCountsForRemovedArticles(articleToRemove);
+        deleteRemovedArticles(articleToRemove);
+        removeArticlesFromIndex(articleToRemove);
+    }
+
+    /**
+     * Update unread counts for removed articles
+     */
+    private void updateUnreadCountsForRemovedArticles(List<Article> articleToRemove) {
+        UserArticleDao userArticleDao = new UserArticleDao();
+        FeedSubscriptionDao feedSubscriptionDao = new FeedSubscriptionDao();
+
+        for (Article article : articleToRemove) {
+            List<UserArticleDto> userArticleDtoList = userArticleDao.findByCriteria(new UserArticleCriteria()
+                    .setArticleId(article.getId())
+                    .setFetchAllFeedSubscription(true)
+                    .setUnread(true));
+
+            for (UserArticleDto userArticleDto : userArticleDtoList) {
+                FeedSubscriptionDto feedSubscriptionDto = feedSubscriptionDao.findFirstByCriteria(
+                        new FeedSubscriptionCriteria().setId(userArticleDto.getFeedSubscriptionId()));
+                if (feedSubscriptionDto != null) {
+                    feedSubscriptionDao.updateUnreadCount(feedSubscriptionDto.getId(), 
+                            feedSubscriptionDto.getUnreadUserArticleCount() - 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Delete removed articles from database
+     */
+    private void deleteRemovedArticles(List<Article> articleToRemove) {
+        ArticleDao articleDao = new ArticleDao();
+        for (Article article: articleToRemove) {
+            articleDao.delete(article.getId());
+        }
+    }
+
+    /**
+     * Remove articles from search index
+     */
+    private void removeArticlesFromIndex(List<Article> articleToRemove) {
+        ArticleDeletedAsyncEvent articleDeletedAsyncEvent = new ArticleDeletedAsyncEvent();
+        articleDeletedAsyncEvent.setArticleList(articleToRemove);
+        eventBusManager.getAsyncEventBus().post(articleDeletedAsyncEvent);
+    }
+
+    /**
+     * Create a new feed or update existing one
+     */
+    private Feed createOrUpdateFeed(Feed newFeed) {
         FeedDao feedDao = new FeedDao();
         String rssUrl = newFeed.getRssUrl();
         Feed feed = feedDao.getByRssUrl(rssUrl);
+        
         if (feed == null) {
-            feed = new Feed();
-            feed.setUrl(newFeed.getUrl());
-            feed.setBaseUri(newFeed.getBaseUri());
-            feed.setRssUrl(rssUrl);
-            feed.setTitle(StringUtils.abbreviate(newFeed.getTitle(), 100));
-            feed.setLanguage(newFeed.getLanguage() != null && newFeed.getLanguage().length() <= 10 ? newFeed.getLanguage() : null);
-            feed.setDescription(StringUtils.abbreviate(newFeed.getDescription(), 4000));
-            feed.setLastFetchDate(new Date());
-            feedDao.create(feed);
-            EntityManagerUtil.flush();
-
-            // Try to download the feed's favicon
-            FaviconUpdateRequestedEvent faviconUpdateRequestedEvent = new FaviconUpdateRequestedEvent();
-            faviconUpdateRequestedEvent.setFeed(feed);
-            AppContext.getInstance().getAsyncEventBus().post(faviconUpdateRequestedEvent);
+            feed = createNewFeed(newFeed, feedDao);
         } else {
-            // Try to update the feed's favicon every week
-            boolean updateFavicon = isFaviconUpdated(feed);
-
-            // Update metadata
-            feed.setUrl(newFeed.getUrl());
-            feed.setBaseUri(newFeed.getBaseUri());
-            feed.setTitle(StringUtils.abbreviate(newFeed.getTitle(), 100));
-            feed.setLanguage(newFeed.getLanguage() != null && newFeed.getLanguage().length() <= 10 ? newFeed.getLanguage() : null);
-            feed.setDescription(StringUtils.abbreviate(newFeed.getDescription(), 4000));
-            feed.setLastFetchDate(new Date());
-            feedDao.update(feed);
-
-            // Update the favicon
-            if (updateFavicon) {
-                FaviconUpdateRequestedEvent faviconUpdateRequestedEvent = new FaviconUpdateRequestedEvent();
-                faviconUpdateRequestedEvent.setFeed(feed);
-                AppContext.getInstance().getAsyncEventBus().post(faviconUpdateRequestedEvent);
-            }
+            updateExistingFeed(feed, newFeed, feedDao);
         }
         
-        // Update existing articles
+        return feed;
+    }
+
+    /**
+     * Create a new feed
+     */
+    private Feed createNewFeed(Feed newFeed, FeedDao feedDao) {
+        Feed feed = new Feed();
+        feed.setUrl(newFeed.getUrl());
+        feed.setBaseUri(newFeed.getBaseUri());
+        feed.setRssUrl(newFeed.getRssUrl());
+        feed.setTitle(StringUtils.abbreviate(newFeed.getTitle(), 100));
+        feed.setLanguage(validateLanguage(newFeed.getLanguage()));
+        feed.setDescription(StringUtils.abbreviate(newFeed.getDescription(), 4000));
+        feed.setLastFetchDate(new Date());
+        
+        feedDao.create(feed);
+        EntityManagerUtil.flush();
+
+        requestFaviconUpdate(feed);
+        
+        return feed;
+    }
+
+    /**
+     * Update an existing feed
+     */
+    private void updateExistingFeed(Feed feed, Feed newFeed, FeedDao feedDao) {
+        if (isFaviconUpdated(feed)) {
+            requestFaviconUpdate(feed);
+        }
+
+        feed.setUrl(newFeed.getUrl());
+        feed.setBaseUri(newFeed.getBaseUri());
+        feed.setTitle(StringUtils.abbreviate(newFeed.getTitle(), 100));
+        feed.setLanguage(validateLanguage(newFeed.getLanguage()));
+        feed.setDescription(StringUtils.abbreviate(newFeed.getDescription(), 4000));
+        feed.setLastFetchDate(new Date());
+        
+        feedDao.update(feed);
+    }
+
+    private String validateLanguage(String language) {
+        return language != null && language.length() <= 10 ? language : null;
+    }
+
+    private void requestFaviconUpdate(Feed feed) {
+        FaviconUpdateRequestedEvent event = new FaviconUpdateRequestedEvent();
+        event.setFeed(feed);
+        eventBusManager.getAsyncEventBus().post(event);
+    }
+
+    /**
+     * Process new and updated articles
+     */
+    private void processArticles(Feed feed, List<Article> articleList) {
+        Map<String, Article> articleMap = buildArticleMap(articleList);
+        
+        updateExistingArticles(feed, articleMap);
+        createNewArticles(feed, articleMap);
+    }
+
+    private Map<String, Article> buildArticleMap(List<Article> articleList) {
         Map<String, Article> articleMap = new HashMap<String, Article>();
         for (Article article : articleList) {
             articleMap.put(article.getGuid(), article);
         }
+        return articleMap;
+    }
 
-        List<String> guidIn = new ArrayList<String>();
-        for (Article article : articleList) {
-            guidIn.add(article.getGuid());
+    private void updateExistingArticles(Feed feed, Map<String, Article> articleMap) {
+        List<String> guidIn = new ArrayList<String>(articleMap.keySet());
+        if (guidIn.isEmpty()) {
+            return;
         }
-        
-        ArticleSanitizer sanitizer = new ArticleSanitizer();
+
         ArticleDao articleDao = new ArticleDao();
-        if (!guidIn.isEmpty()) {
-            ArticleCriteria articleCriteria = new ArticleCriteria()
-                    .setFeedId(feed.getId())
-                    .setGuidIn(guidIn);
-            List<ArticleDto> currentArticleDtoList = articleDao.findByCriteria(articleCriteria);
-            List<Article> articleUpdatedList = new ArrayList<Article>();
-            for (ArticleDto currentArticle : currentArticleDtoList) {
-                Article newArticle = articleMap.remove(currentArticle.getGuid());
-                
-                Article article = new Article();
-                article.setPublicationDate(currentArticle.getPublicationDate());
-                article.setId(currentArticle.getId());
-                article.setFeedId(feed.getId());
-                article.setUrl(newArticle.getUrl());
-                article.setTitle(StringUtils.abbreviate(TextSanitizer.sanitize(newArticle.getTitle()), 4000));
-                article.setCreator(StringUtils.abbreviate(newArticle.getCreator(), 200));
-                String baseUri = UrlUtil.getBaseUri(feed, newArticle);
-                article.setDescription(sanitizer.sanitize(baseUri, newArticle.getDescription()));
-                article.setCommentUrl(newArticle.getCommentUrl());
-                article.setCommentCount(newArticle.getCommentCount());
-                article.setEnclosureUrl(newArticle.getEnclosureUrl());
-                article.setEnclosureLength(newArticle.getEnclosureLength());
-                article.setEnclosureType(newArticle.getEnclosureType());
+        ArticleSanitizer sanitizer = new ArticleSanitizer();
+        List<Article> articleUpdatedList = new ArrayList<Article>();
 
-                if (!Strings.nullToEmpty(currentArticle.getTitle()).equals(Strings.nullToEmpty(article.getTitle())) ||
-                        !Strings.nullToEmpty(currentArticle.getDescription()).equals(Strings.nullToEmpty(article.getDescription()))) {
-                    articleDao.update(article);
-                    articleUpdatedList.add(article);
-                }
-            }
-            
-            // Update indexed article
-            if (!articleUpdatedList.isEmpty()) {
-                ArticleUpdatedAsyncEvent articleUpdatedAsyncEvent = new ArticleUpdatedAsyncEvent();
-                articleUpdatedAsyncEvent.setArticleList(articleUpdatedList);
-                AppContext.getInstance().getAsyncEventBus().post(articleUpdatedAsyncEvent);
+        List<ArticleDto> currentArticleDtoList = articleDao.findByCriteria(
+                new ArticleCriteria().setFeedId(feed.getId()).setGuidIn(guidIn));
+
+        for (ArticleDto currentArticle : currentArticleDtoList) {
+            Article newArticle = articleMap.remove(currentArticle.getGuid());
+            Article article = prepareArticleForUpdate(feed, currentArticle, newArticle, sanitizer);
+
+            if (hasArticleChanged(currentArticle, article)) {
+                articleDao.update(article);
+                articleUpdatedList.add(article);
             }
         }
+
+        if (!articleUpdatedList.isEmpty()) {
+            updateArticleIndex(articleUpdatedList);
+        }
+    }
+
+    private Article prepareArticleForUpdate(Feed feed, ArticleDto currentArticle, Article newArticle, ArticleSanitizer sanitizer) {
+        Article article = new Article();
+        article.setPublicationDate(currentArticle.getPublicationDate());
+        article.setId(currentArticle.getId());
+        article.setFeedId(feed.getId());
+        article.setUrl(newArticle.getUrl());
+        article.setTitle(StringUtils.abbreviate(TextSanitizer.sanitize(newArticle.getTitle()), 4000));
+        article.setCreator(StringUtils.abbreviate(newArticle.getCreator(), 200));
         
-        // Create new articles
-        if (!articleMap.isEmpty()) {
-            FeedSubscriptionCriteria feedSubscriptionCriteria = new FeedSubscriptionCriteria()
-                    .setFeedId(feed.getId());
-            
-            FeedSubscriptionDao feedSubscriptionDao = new FeedSubscriptionDao();
-            List<FeedSubscriptionDto> feedSubscriptionList = feedSubscriptionDao.findByCriteria(feedSubscriptionCriteria);
-            
-            UserArticleDao userArticleDao = new UserArticleDao();
-            for (Article article : articleMap.values()) {
-                // Create the new article
-                article.setFeedId(feed.getId());
-                article.setTitle(StringUtils.abbreviate(TextSanitizer.sanitize(article.getTitle()), 4000));
-                article.setCreator(StringUtils.abbreviate(article.getCreator(), 200));
-                String baseUri = UrlUtil.getBaseUri(feed, article);
-                article.setDescription(sanitizer.sanitize(baseUri, article.getDescription()));
-                articleDao.create(article);
-    
-                // Create the user articles eagerly for users already subscribed
-                // FIXME count be optimized in 1 query instad of a*s
-                for (FeedSubscriptionDto feedSubscription : feedSubscriptionList) {
-                    UserArticle userArticle = new UserArticle();
-                    userArticle.setArticleId(article.getId());
-                    userArticle.setUserId(feedSubscription.getUserId());
-                    userArticleDao.create(userArticle);
+        String baseUri = UrlUtil.getBaseUri(feed, newArticle);
+        article.setDescription(sanitizer.sanitize(baseUri, newArticle.getDescription()));
+        
+        article.setCommentUrl(newArticle.getCommentUrl());
+        article.setCommentCount(newArticle.getCommentCount());
+        article.setEnclosureUrl(newArticle.getEnclosureUrl());
+        article.setEnclosureLength(newArticle.getEnclosureLength());
+        article.setEnclosureType(newArticle.getEnclosureType());
+        
+        return article;
+    }
 
-                    feedSubscription.setUnreadUserArticleCount(feedSubscription.getUnreadUserArticleCount() + 1);
-                    feedSubscriptionDao.updateUnreadCount(feedSubscription.getId(), feedSubscription.getUnreadUserArticleCount());
-                }
-            }
+    private boolean hasArticleChanged(ArticleDto currentArticle, Article article) {
+        return !Strings.nullToEmpty(currentArticle.getTitle()).equals(Strings.nullToEmpty(article.getTitle())) ||
+               !Strings.nullToEmpty(currentArticle.getDescription()).equals(Strings.nullToEmpty(article.getDescription()));
+    }
 
-            // Add new articles to the index
-            ArticleCreatedAsyncEvent articleCreatedAsyncEvent = new ArticleCreatedAsyncEvent();
-            articleCreatedAsyncEvent.setArticleList(Lists.newArrayList(articleMap.values()));
-            AppContext.getInstance().getAsyncEventBus().post(articleCreatedAsyncEvent);
+    private void updateArticleIndex(List<Article> articleUpdatedList) {
+        ArticleUpdatedAsyncEvent articleUpdatedAsyncEvent = new ArticleUpdatedAsyncEvent();
+        articleUpdatedAsyncEvent.setArticleList(articleUpdatedList);
+        eventBusManager.getAsyncEventBus().post(articleUpdatedAsyncEvent);
+    }
+
+    private void createNewArticles(Feed feed, Map<String, Article> articleMap) {
+        if (articleMap.isEmpty()) {
+            return;
         }
 
+        List<FeedSubscriptionDto> feedSubscriptionList = getFeedSubscriptions(feed);
+        createArticlesAndUserArticles(feed, articleMap, feedSubscriptionList);
+        indexNewArticles(articleMap);
+    }
+
+    private List<FeedSubscriptionDto> getFeedSubscriptions(Feed feed) {
+        return new FeedSubscriptionDao().findByCriteria(
+                new FeedSubscriptionCriteria().setFeedId(feed.getId()));
+    }
+
+    private void createArticlesAndUserArticles(Feed feed, Map<String, Article> articleMap, 
+            List<FeedSubscriptionDto> feedSubscriptionList) {
+        ArticleDao articleDao = new ArticleDao();
+        UserArticleDao userArticleDao = new UserArticleDao();
+        FeedSubscriptionDao feedSubscriptionDao = new FeedSubscriptionDao();
+        ArticleSanitizer sanitizer = new ArticleSanitizer();
+
+        for (Article article : articleMap.values()) {
+            article.setFeedId(feed.getId());
+            article.setTitle(StringUtils.abbreviate(TextSanitizer.sanitize(article.getTitle()), 4000));
+            article.setCreator(StringUtils.abbreviate(article.getCreator(), 200));
+            
+            String baseUri = UrlUtil.getBaseUri(feed, article);
+            article.setDescription(sanitizer.sanitize(baseUri, article.getDescription()));
+            
+            articleDao.create(article);
+
+            createUserArticles(article, feedSubscriptionList, userArticleDao, feedSubscriptionDao);
+        }
+    }
+
+    private void createUserArticles(Article article, List<FeedSubscriptionDto> feedSubscriptionList,
+            UserArticleDao userArticleDao, FeedSubscriptionDao feedSubscriptionDao) {
+        for (FeedSubscriptionDto feedSubscription : feedSubscriptionList) {
+            UserArticle userArticle = new UserArticle();
+            userArticle.setArticleId(article.getId());
+            userArticle.setUserId(feedSubscription.getUserId());
+            userArticleDao.create(userArticle);
+
+            feedSubscription.setUnreadUserArticleCount(feedSubscription.getUnreadUserArticleCount() + 1);
+            feedSubscriptionDao.updateUnreadCount(feedSubscription.getId(), feedSubscription.getUnreadUserArticleCount());
+        }
+    }
+
+    private void indexNewArticles(Map<String, Article> articleMap) {
+        ArticleCreatedAsyncEvent articleCreatedAsyncEvent = new ArticleCreatedAsyncEvent();
+        articleCreatedAsyncEvent.setArticleList(Lists.newArrayList(articleMap.values()));
+        eventBusManager.getAsyncEventBus().post(articleCreatedAsyncEvent);
+    }
+
+    private void logSyncResults(String url, long startTime, List<Article> articleList) {
         long endTime = System.currentTimeMillis();
         if (log.isInfoEnabled()) {
-            log.info(MessageFormat.format("Synchronized feed at URL {0} in {1}ms, {2} articles added, {3} deleted", url, endTime - startTime, articleMap.size(), articleToRemove.size()));
+            log.info(MessageFormat.format("Synchronized feed at URL {0} in {1}ms, {2} articles added",
+                    url, endTime - startTime, articleList.size()));
         }
-        
-        return feed;
     }
 
     /**

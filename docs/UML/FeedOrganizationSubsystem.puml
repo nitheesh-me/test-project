@@ -17,7 +17,7 @@ package "Reader_web" {
         + top() : void
         + share() : void
     }
-    
+
     ' feed module: holds UI cache and container for article items
     class "feed" {
         - String title
@@ -29,13 +29,13 @@ package "Reader_web" {
         + reset() : void
         + init() : void
     }
-    
+
     ' subscription module: used to update unread counts and titles
     class "subscription" {
         + updateUnreadCount() : int
         + updateTitle() : void
     }
-    
+
     ' util module: utility functions for Ajax calls and URL handling
     class "util" {
         + init() : void
@@ -44,10 +44,10 @@ package "Reader_web" {
         + escape() : String
         + url : Urls
     }
-    
+
     ' Relationships:
-    "article" --> "feed" 
-    "feed" --> "util" 
+    "article" --> "feed"
+    "feed" --> "util"
     "article" --> "util" : calls ajax() & URL handling
     "article" --> "subscription" : updates unread counts
 }
@@ -56,7 +56,7 @@ package "Reader_web" {
 ' reader_core Package (Domain & Services)
 '------------------------------------------
 package "reader_core" {
-    
+
     '-------------------------------
     ' REST API RESOURCES
     '-------------------------------
@@ -88,7 +88,7 @@ package "reader_core" {
         note right of ArticleResource
             ArticleResource is extended by baseResource.
         end note
-        
+
         class StarredResource {
             + get() : Response
             + star() : Response
@@ -158,7 +158,7 @@ package "reader_core" {
             + delete() : void
             + update() : Feed
         }
-        
+
         class FeedSynchronizationDao {
             + create() : void
             + deleteOldFeedSynchronization() : void
@@ -174,12 +174,12 @@ package "reader_core" {
             + getFeedSubscription() : FeedSubscription
         }
         note right of FeedSubscriptionDao
-            FeedSubscriptionDao is responsible for managing 
+            FeedSubscriptionDao is responsible for managing
             the subscription of feeds by users.
             it's uses entity and criteria classes to manage.
             Similiare for all other DAO classes.
         end note
-        
+
         '-------------------------------
         ' DTOs
         '-------------------------------
@@ -327,7 +327,7 @@ package "reader_core" {
             end note
         }
     }
-    
+
     package "util"{
         abstract class BaseDao {
             + void findByCriteria()
@@ -336,7 +336,7 @@ package "reader_core" {
             # QueryParam getQueryParam()
         }
         note right of BaseDao
-            Base class for all DAO classes and It's is responsible for managing POJO classe. 
+            Base class for all DAO classes and It's is responsible for managing POJO classe.
             BaseDao takes <T, C>, where:
             T: Data transer entity that acts as container for moving Data.
             C: Criteria type used to specify the search or filter conditions for queries
@@ -357,7 +357,7 @@ package "reader_core" {
             + getDirectoryReader() : DirectoryReader
         }
         note bottom of IndexingService
-            IndexingService is responsible for building 
+            IndexingService is responsible for building
             and maintaining a search index for articles.
         end note
 
@@ -374,14 +374,14 @@ package "reader_core" {
             - getOldestArticle() : Article
         }
         note bottom of FeedService
-            FeedService is responsible for synchronizing 
-            feeds in predifined intervals, parsing articles, 
+            FeedService is responsible for synchronizing
+            feeds in predifined intervals, parsing articles,
             and updating the database.
         end note
-        
+
         ' Relationship: FeedService uses various DAO classes (omitted here for brevity)
-        FeedService --> FeedDao 
-        FeedService --> ArticleDao 
+        FeedService --> FeedDao
+        FeedService --> ArticleDao
         FeedService --> UserArticleDao
         FeedService --> FeedSubscriptionDao
         FeedService --> FeedSynchronizationDao
@@ -500,7 +500,7 @@ package "reader_core" {
             - resetEventBus() : void
             - newAsyncEventBus() : EventBus
         }
-        
+
         ' AppContext creates and starts FeedService and IndexingService
         AppContext --> FeedService : creates & starts
         AppContext --> IndexingService : creates & starts
@@ -527,14 +527,14 @@ package "reader_core" {
     '-------------------------------
     ' REST RESOURCE RELATIONSHIPS
     '-------------------------------
-    AllResource --> UserArticleDao 
-    AllResource --> FeedSubscriptionDao 
-    ArticleResource --> UserArticleDao 
-    ArticleResource --> ArticleDao 
-    ArticleResource --> FeedSubscriptionDao 
-    StarredResource --> UserArticleDao 
-    CategoryResource --> CategoryDao 
-    CategoryResource --> UserArticleDao 
+    AllResource --> UserArticleDao
+    AllResource --> FeedSubscriptionDao
+    ArticleResource --> UserArticleDao
+    ArticleResource --> ArticleDao
+    ArticleResource --> FeedSubscriptionDao
+    StarredResource --> UserArticleDao
+    CategoryResource --> CategoryDao
+    CategoryResource --> UserArticleDao
     SearchResource --> IndexingService : use Search Articles
 }
 

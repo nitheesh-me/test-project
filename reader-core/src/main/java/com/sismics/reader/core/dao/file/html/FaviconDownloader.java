@@ -33,7 +33,7 @@ public class FaviconDownloader {
     /**
      * Authorized MIME types and corresponding file extensions.
      */
-    final public ImmutableMap<String, String> FAVICON_MIME_TYPE_MAP = new ImmutableMap.Builder<String, String>()
+    final private ImmutableMap<String, String> FAVICON_MIME_TYPE_MAP = new ImmutableMap.Builder<String, String>()
             .put("image/bmp", ".bmp")
             .put("image/gif", ".gif")
             .put("image/jpeg", ".jpg")
@@ -41,7 +41,10 @@ public class FaviconDownloader {
             .put("image/x-icon", ".ico")
             .put("image/vnd.microsoft.icon", ".ico")
             .build();
-    
+
+    protected ImmutableMap<String, String> getFAVICON_MIME_TYPE_MAP() {
+        return this.FAVICON_MIME_TYPE_MAP;
+    }
     /**
      * Download the favicon from a feed's webpage.
      * Attempts to extract the favicon location from the page headers, or guess from common favicon locations.
@@ -138,7 +141,7 @@ public class FaviconDownloader {
                             // Check if it is a graphics file, we cannot rely on HTTP headers for Content-Type
                             String type = MimeTypeUtil.guessMimeType(localFile);
                             if (type != null) {
-                                String extension = FAVICON_MIME_TYPE_MAP.get(type);
+                                String extension = getFAVICON_MIME_TYPE_MAP().get(type);
                                 if (extension != null) {
                                     File outputFile = new File(directory + File.separator + fileName + extension);
                                     Files.copy(localFile, new FileOutputStream(outputFile));

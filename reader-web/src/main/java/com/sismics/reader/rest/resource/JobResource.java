@@ -2,15 +2,19 @@ package com.sismics.reader.rest.resource;
 
 import com.sismics.reader.core.dao.jpa.JobDao;
 import com.sismics.reader.core.model.jpa.Job;
+import com.sismics.reader.rest.service.Authentication.AuthenticationService;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
+import com.sismics.security.IPrincipal;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -20,7 +24,15 @@ import javax.ws.rs.core.Response;
  * @author jtremeaux
  */
 @Path("/job")
-public class JobResource extends BaseResource {
+public class JobResource {
+
+
+    private AuthenticationService authHelper;
+    private IPrincipal principal;
+    public JobResource(@Context HttpServletRequest request) throws JSONException {
+        this.authHelper = new AuthenticationService(request);
+        this.principal = authHelper.getPrincipal();
+    }
     /**
      * Deletes a job.
      *
@@ -32,7 +44,7 @@ public class JobResource extends BaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response delete(
             @PathParam("id") String id) throws JSONException {
-        if (!authenticate()) {
+        if (!authHelper.authenticate()) {
             throw new ForbiddenClientException();
         }
 
