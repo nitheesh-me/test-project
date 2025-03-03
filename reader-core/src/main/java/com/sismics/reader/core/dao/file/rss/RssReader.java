@@ -254,60 +254,49 @@ public class RssReader extends DefaultHandler {
     
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        // Handle root elements first
-        if (handleRootElement(uri, localName, attributes)) {
-            return;
+        switch (localName.toLowerCase()) {
+            case "rss":
+                handleRssStartElement();
+                break;
+            case "feed":
+                handleFeedStartElement(attributes);
+                break;
+            case "rdf":
+                handleRdfStartElement();
+                break;
+            default:
+                handleOtherStartElement(uri, localName, attributes);
+                break;
         }
-        
-        // Validate feed exists
+    }
+
+    private void handleRssStartElement() {
+        initFeed();
+        pushElement(Element.RSS);
+        feedType = FeedType.RSS;
+    }
+
+    private void handleFeedStartElement(Attributes attributes) {
+        initFeed();
+        pushElement(Element.FEED);
+        feedType = FeedType.ATOM;
+        feed.setLanguage(StringUtils.trimToNull(attributes.getValue(URI_XML, "lang")));
+        feed.setBaseUri(StringUtils.trimToNull(attributes.getValue(URI_XML, "base")));
+    }
+
+    private void handleRdfStartElement() {
+        initFeed();
+        pushElement(Element.RDF);
+        feedType = FeedType.RDF;
+    }
+
+    private void handleOtherStartElement(String uri, String localName, Attributes attributes) throws SAXException {
         if (feed == null) {
             throw new SAXException("Root element doesn't designate an RSS/Atom/RDF feed, encountered: " + localName);
         }
-
-        // Handle feed type specific elements
-        switch (feedType) {
-            case RSS:
-            case RDF:
-                handleRssElement(uri, localName, attributes);
-                break;
-            case ATOM:
-                handleAtomElement(uri, localName, attributes);
-                break;
-            default:
-                pushElement(Element.UNKNOWN);
-        }
-    }
-
-    private boolean handleRootElement(String uri, String localName, Attributes attributes) {
-        if ("rss".equalsIgnoreCase(localName)) {
-            initFeed();
-            pushElement(Element.RSS);
-            feedType = FeedType.RSS;
-            return true;
-        } else if ("feed".equalsIgnoreCase(localName)) {
-            initFeed();
-            pushElement(Element.FEED);
-            feedType = FeedType.ATOM;
-            handleAtomFeedAttributes(attributes);
-            return true;
-        } else if ("RDF".equalsIgnoreCase(localName)) {
-            initFeed();
-            pushElement(Element.RDF);
-            feedType = FeedType.RDF;
-            return true;
-        }
-        return false;
-    }
-
-    private void handleAtomFeedAttributes(Attributes attributes) {
-        String lang = StringUtils.trimToNull(attributes.getValue(URI_XML, "lang"));
-        feed.setLanguage(lang);
-        String xmlBase = StringUtils.trimToNull(attributes.getValue(URI_XML, "base"));
-        feed.setBaseUri(xmlBase);
-    }
-
-    private void handleRssElement(String uri, String localName, Attributes attributes) {
-        if (isChannelElement(localName)) {
+        
+        if (((feedType == FeedType.RSS && currentElement == Element.RSS) || (feedType == FeedType.RDF && currentElement == Element.RDF)) &&
+                "channel".equalsIgnoreCase(localName)) {
             pushElement(Element.RSS_CHANNEL);
         } else if (isChannelMetadataElement(localName, uri)) {
             handleChannelMetadata(localName);
@@ -434,61 +423,95 @@ public class RssReader extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        // Handle RSS feed elements
-        handleRssFeedElements(uri, localName);
-        
-        // Handle RSS item elements
-        handleRssItemElements(uri, localName);
-        
-        // Handle Atom feed elements
-        handleAtomFeedElements(uri, localName);
-        
-        // Handle Atom entry elements
-        handleAtomEntryElements(uri, localName);
-        
+        switch (localName.toLowerCase()) {
+            case "title":
+                handleTitleEndElement(uri);
+                break;
+            case "link":
+                handleLinkEndElement(uri);
+                break;
+            case "description":
+                handleDescriptionEndElement(uri);
+                break;
+            case "language":
+                handleLanguageEndElement();
+                break;
+            case "guid":
+                handleGuidEndElement();
+                break;
+            case "comments":
+                handleCommentsEndElement(uri);
+                break;
+            case "encoded":
+                handleEncodedEndElement(uri);
+                break;
+            case "entry":
+                handleEntryEndElement();
+                break;
+            default:
+                handleOtherEndElement(uri, localName);
+                break;
+        }
         content = null;
         popElement();
     }
-    
-    private void handleRssFeedElements(String uri, String localName) {
-        if ("title".equalsIgnoreCase(localName) && currentElement == Element.RSS_TITLE) {
+
+    private void handleTitleEndElement(String uri) {
+        if (currentElement == Element.RSS_TITLE) {
             feed.setTitle(getContent());
-        } else if ("link".equalsIgnoreCase(localName) && currentElement == Element.RSS_LINK) {
-            feed.setUrl(getContent());
-        } else if ("description".equalsIgnoreCase(localName) && currentElement == Element.RSS_DESCRIPTION) {
-            feed.setDescription(getContent());
-        } else if ("language".equalsIgnoreCase(localName) && currentElement == Element.RSS_LANGUAGE) {
-            feed.setLanguage(getContent());
+        } else if (currentElement == Element.ITEM_TITLE) {
+            article.setTitle(getContent());
+        } else if (currentElement == Element.ATOM_TITLE) {
+            feed.setTitle(getContent());
+        } else if (currentElement == Element.ENTRY_TITLE) {
+            article.setTitle(getContent());
         }
     }
-    
-    private void handleRssItemElements(String uri, String localName) {
-        if ("title".equalsIgnoreCase(localName) && currentElement == Element.ITEM_TITLE) {
-            article.setTitle(getContent());
-        } else if ("guid".equalsIgnoreCase(localName) && currentElement == Element.ITEM_GUID) {
-            article.setGuid(getContent());
-        } else if ("link".equalsIgnoreCase(localName) && currentElement == Element.ITEM_LINK) {
+
+    private void handleLinkEndElement(String uri) {
+        if (currentElement == Element.RSS_LINK) {
+            feed.setUrl(getContent());
+        } else if (currentElement == Element.ITEM_LINK) {
             article.setUrl(getContent());
-        } else if ("comments".equalsIgnoreCase(localName)) {
-            handleComments(uri);
-        } else if ("description".equalsIgnoreCase(localName) && currentElement == Element.ITEM_DESCRIPTION) {
+        }
+    }
+
+    private void handleDescriptionEndElement(String uri) {
+        if (currentElement == Element.RSS_DESCRIPTION) {
+            feed.setDescription(getContent());
+        } else if (currentElement == Element.ITEM_DESCRIPTION) {
             if (article.getDescription() == null) {
                 article.setDescription(getContent());
             }
-        } else if ("creator".equalsIgnoreCase(localName) && currentElement == Element.ITEM_DC_CREATOR && URI_DC.equals(uri)) {
-            article.setCreator(getContent());
-        } else if ("date".equalsIgnoreCase(localName) && currentElement == Element.ITEM_DC_DATE && URI_DC.equals(uri)) {
-            article.setPublicationDate(DateUtil.parseDate(getContent(), DF_DC));
-        } else if ("pubDate".equalsIgnoreCase(localName) && currentElement == Element.ITEM_PUB_DATE) {
-            article.setPublicationDate(DateUtil.parseDate(getContent(), DF_RSS));
-        } else if ("encoded".equalsIgnoreCase(localName) && currentElement == Element.ITEM_CONTENT_ENCODED && URI_CONTENT.equals(uri)) {
+        } else if (currentElement == Element.ATOM_SUBTITLE) {
+            feed.setDescription(getContent());
+        } else if (currentElement == Element.ENTRY_SUMMARY) {
+            if (article.getDescription() == null) {
+                article.setDescription(getContent());
+            }
+        } else if (currentElement == Element.ENTRY_CONTENT) {
             article.setDescription(getContent());
         }
     }
-    
-    private void handleComments(String uri) {
+
+    private void handleLanguageEndElement() {
+        if (currentElement == Element.RSS_LANGUAGE) {
+            feed.setLanguage(getContent());
+        }
+    }
+
+    private void handleGuidEndElement() {
+        if (currentElement == Element.ITEM_GUID) {
+            article.setGuid(getContent());
+        } else if (currentElement == Element.ENTRY_ID) {
+            article.setGuid(getContent());
+        }
+    }
+
+    private void handleCommentsEndElement(String uri) {
         if (currentElement == Element.ITEM_COMMENTS && !URI_SLASH.equals(uri)) {
             article.setCommentUrl(getContent());
+        } else if (currentElement == Element.ITEM_SLASH_COMMENTS && URI_SLASH.equals(uri)) {
         } else if (currentElement == Element.ITEM_SLASH_COMMENTS && URI_SLASH.equals(uri)) {
             String commentCountAsString = getContent();
             try {
@@ -500,42 +523,34 @@ public class RssReader extends DefaultHandler {
             }
         }
     }
-    
-    private void handleAtomFeedElements(String uri, String localName) {
-        if ("title".equalsIgnoreCase(localName) && currentElement == Element.ATOM_TITLE) {
-            feed.setTitle(getContent());
-        } else if ("subtitle".equalsIgnoreCase(localName) && currentElement == Element.ATOM_SUBTITLE) {
-            feed.setDescription(getContent());
-        } else if ("updated".equalsIgnoreCase(localName) && currentElement == Element.ATOM_UPDATED) {
-            // TODO updated
-        }
-    }
-    
-    private void handleAtomEntryElements(String uri, String localName) {
-        if ("entry".equalsIgnoreCase(localName) && currentElement == Element.ENTRY) {
-            handleAtomEntry();
-        } else if ("title".equalsIgnoreCase(localName) && currentElement == Element.ENTRY_TITLE) {
-            article.setTitle(getContent());
-        } else if ("updated".equalsIgnoreCase(localName) && currentElement == Element.ENTRY_UPDATED) {
-            article.setPublicationDate(DateUtil.parseDate(getContent(), DF_ATOM));
-        } else if ("id".equalsIgnoreCase(localName) && currentElement == Element.ENTRY_ID) {
-            article.setGuid(getContent());
-        } else if ("summary".equalsIgnoreCase(localName) && currentElement == Element.ENTRY_SUMMARY) {
-            if (article.getDescription() == null) {
-                article.setDescription(getContent());
-            }
-        } else if ("content".equalsIgnoreCase(localName) && currentElement == Element.ENTRY_CONTENT) {
+
+    private void handleEncodedEndElement(String uri) {
+        if (currentElement == Element.ITEM_CONTENT_ENCODED && URI_CONTENT.equals(uri)) {
             article.setDescription(getContent());
-        } else if ("name".equalsIgnoreCase(localName) && currentElement == Element.AUTHOR_NAME) {
-            article.setCreator(getContent());
         }
     }
-    
-    private void handleAtomEntry() {
+
+    private void handleEntryEndElement() {
         String url = new AtomArticleUrlGuesserStrategy().guess(atomArticleLinkList);
         article.setUrl(url);
         String commentUrl = new AtomArticleCommentUrlGuesserStrategy().guess(atomArticleLinkList);
         article.setCommentUrl(commentUrl);
+    }
+
+    private void handleOtherEndElement(String uri, String localName) {
+        if ("date".equalsIgnoreCase(localName) && currentElement == Element.ITEM_DC_DATE && URI_DC.equals(uri)) {
+            Date publicationDate = DateUtil.parseDate(getContent(), DF_DC);
+            article.setPublicationDate(publicationDate);
+        } else if ("pubDate".equalsIgnoreCase(localName) && currentElement == Element.ITEM_PUB_DATE) {
+            Date publicationDate = DateUtil.parseDate(getContent(), DF_RSS);
+            article.setPublicationDate(publicationDate);
+        } else if ("updated".equalsIgnoreCase(localName) && currentElement == Element.ATOM_UPDATED) {
+            // TODO updated
+        } else if ("updated".equalsIgnoreCase(localName) && currentElement == Element.ENTRY_UPDATED) {
+            article.setPublicationDate(DateUtil.parseDate(getContent(), DF_ATOM));
+        } else if ("name".equalsIgnoreCase(localName) && currentElement == Element.AUTHOR_NAME) {
+            article.setCreator(getContent());
+        }
     }
 
     /**

@@ -71,7 +71,7 @@ public class FeedService extends AbstractScheduledService implements IFeedServic
     protected void runOneIteration() {
         // Don't let Guava manage our exceptions, or they will be swallowed and the service will silently stop
         try {
-            TransactionUtil.handle(() -> synchronizeAllFeeds());
+            TransactionUtil.handle(this::synchronizeAllFeeds);
         } catch (Throwable t) {
             log.error("Error synchronizing feeds", t);
         }
@@ -88,41 +88,41 @@ public class FeedService extends AbstractScheduledService implements IFeedServic
      */
 
     public void synchronizeAllFeeds() {
-        // Update all feeds currently having subscribed users
-        FeedDao feedDao = new FeedDao();
-        FeedCriteria feedCriteria = new FeedCriteria()
-                .setWithUserSubscription(true);
-        List<FeedDto> feedList = feedDao.findByCriteria(feedCriteria);
-        List<FeedSynchronization> feedSynchronizationList = new ArrayList<FeedSynchronization>();
+        List<FeedDto> feedList = getSubscribedFeeds();
+        List<FeedSynchronization> feedSynchronizationList = new ArrayList<>();
         for (FeedDto feed : feedList) {
-            FeedSynchronization feedSynchronization = new FeedSynchronization();
-            feedSynchronization.setFeedId(feed.getId());
-            feedSynchronization.setSuccess(true);
-            long startTime = System.currentTimeMillis();
-            
-            try {
-                synchronize(feed.getRssUrl());
-            } catch (Exception e) {
-                log.error(MessageFormat.format("Error synchronizing feed at URL: {0}", feed.getRssUrl()), e);
-                feedSynchronization.setSuccess(false);
-                feedSynchronization.setMessage(ExceptionUtils.getStackTrace(e));
-            }
-            feedSynchronization.setDuration((int) (System.currentTimeMillis() - startTime));
+            FeedSynchronization feedSynchronization = synchronizeFeed(feed);
             feedSynchronizationList.add(feedSynchronization);
             TransactionUtil.commit();
         }
+        updateFeedSynchronizationStatus(feedSynchronizationList);
+    }
 
-        // If all feeds have failed, then we infer that the network is probably down
-        FeedSynchronizationDao feedSynchronizationDao = new FeedSynchronizationDao();
-        boolean networkDown = true;
-        for (FeedSynchronization feedSynchronization : feedSynchronizationList) {
-            if (feedSynchronization.isSuccess()) {
-                networkDown = false;
-                break;
-            }
+    private List<FeedDto> getSubscribedFeeds() {
+        FeedDao feedDao = new FeedDao();
+        FeedCriteria feedCriteria = new FeedCriteria().setWithUserSubscription(true);
+        return feedDao.findByCriteria(feedCriteria);
+    }
+
+    private FeedSynchronization synchronizeFeed(FeedDto feed) {
+        FeedSynchronization feedSynchronization = new FeedSynchronization();
+        feedSynchronization.setFeedId(feed.getId());
+        feedSynchronization.setSuccess(true);
+        long startTime = System.currentTimeMillis();
+        try {
+            synchronize(feed.getRssUrl());
+        } catch (Exception e) {
+            log.error(MessageFormat.format("Error synchronizing feed at URL: {0}", feed.getRssUrl()), e);
+            feedSynchronization.setSuccess(false);
+            feedSynchronization.setMessage(ExceptionUtils.getStackTrace(e));
         }
+        feedSynchronization.setDuration((int) (System.currentTimeMillis() - startTime));
+        return feedSynchronization;
+    }
 
-        // Update the status of all synchronized feeds
+    private void updateFeedSynchronizationStatus(List<FeedSynchronization> feedSynchronizationList) {
+        FeedSynchronizationDao feedSynchronizationDao = new FeedSynchronizationDao();
+        boolean networkDown = feedSynchronizationList.stream().noneMatch(FeedSynchronization::isSuccess);
         if (!networkDown) {
             for (FeedSynchronization feedSynchronization : feedSynchronizationList) {
                 feedSynchronizationDao.create(feedSynchronization);
