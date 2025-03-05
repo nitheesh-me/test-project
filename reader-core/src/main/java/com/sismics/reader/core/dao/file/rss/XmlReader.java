@@ -50,8 +50,9 @@ public class XmlReader extends Reader {
      * @throws IOException If an I/O error occurs
      */
     public XmlReader(InputStream in, String defaultEnc) throws IOException {
-        String encoding = detectEncoding(in, defaultEnc);
-        internalInputStreamReader = new InputStreamReader(new PushbackInputStream(in, HEADER_SIZE), encoding);
+        PushbackInputStream pbis = new PushbackInputStream(in, HEADER_SIZE);
+        String encoding = detectEncoding(pbis, defaultEnc);
+        internalInputStreamReader = new InputStreamReader(pbis, encoding);
     }
 
     private String detectEncoding(InputStream in, String defaultEnc) throws IOException {

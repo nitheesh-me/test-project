@@ -47,7 +47,6 @@ public abstract class ReaderHttpClient<T> {
         Closer closer = Closer.create();
         try {
             HttpURLConnection connection = buildHttpConnection(url);
-            
             // Handle 3xx redirections
             int status = connection.getResponseCode();
             if (status == HttpURLConnection.HTTP_MOVED_TEMP

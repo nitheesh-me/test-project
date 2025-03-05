@@ -571,6 +571,7 @@ public class FeedService extends AbstractScheduledService implements IFeedServic
                     e instanceof ConnectException) {
                 log.warn(MessageFormat.format("Error parsing HTML page at URL {0} : {1}", url, e.getMessage()));
             } else {
+                System.out.println(e.getMessage());
                 log.warn(MessageFormat.format("Error parsing HTML page at URL {0}", url));
             }
         }
