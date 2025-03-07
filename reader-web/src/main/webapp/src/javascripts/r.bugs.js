@@ -1,0 +1,191 @@
+/**
+ * Reset bugs related context.
+ */
+r.bugs.reset = function() {
+    // Hiding bugs container
+    $('#bugs-container').hide();
+};
+  
+/**
+ * Initializing bugs module.
+ */
+r.bugs.init = function() {
+    // Listening hash changes on #/bugs/*
+    // /bugs/
+    $.History.bind('/bugs/', function(state, target) {
+        // Resetting page context
+        r.main.reset();
+        
+        // Showing bugs container
+        $('#bugs-container').show();
+        
+        // Configuring contextual toolbar
+        $('#toolbar > .bugs').removeClass('hidden');
+        
+        if (r.user.hasBaseFunction('ADMIN')) {
+        // Loading logs
+        r.bugs.loadLogs(false);
+        } else {
+        // User is not admin, hide related features
+        $('#bugs-container .admin').hide();
+        }
+    });
+
+    // Rebuild index button click
+    $('#bugs-container .rebuild-index-button').click(function() {
+        r.util.ajax({
+        url: r.util.url.app_batch_reindex,
+        type: 'POST',
+        done: function(data) {
+            $().toastmessage('showSuccessToast', $.t('bugs.rebuildindex.success'));
+        }
+        });
+    });
+
+    // Logs infinite scrolling
+    $('#logs-container').scroll(function() {
+        if ($('#logs-table tr.log-item:last').visible(true)) {
+        r.bugs.loadLogs(true);
+        }
+    });
+
+    // Reload logs on level change
+    $('#logs-level-select').change(function() {
+        r.bugs.loadLogs(false);
+    });
+
+    // Reload logs on refresh button click
+    $('#logs-refresh-button').click(function() {
+        r.bugs.loadLogs(false);
+    });
+
+    // Current application version
+    r.util.ajax({
+        url: r.util.url.app_version,
+        type: 'GET',
+        done: function(data) {
+        var currentVersion = data.current_version;
+        
+        // Populate application informations
+        $('#bugs-version').html(currentVersion);
+        $('#bugs-used-memory').html(numeral(data.total_memory - data.free_memory).format('0b'));
+        $('#bugs-total-memory').html(numeral(data.total_memory).format('0b'));
+
+        // Get cookie
+        $.cookie.json = true;
+        var cookie = $.cookie('update_check');
+        $.cookie.json = false;
+        
+        if (cookie === undefined) {
+            // Last version from GitHub
+            r.util.ajax({
+            url: r.util.url.github_tags,
+            type: 'GET',
+            dataType: 'jsonp',
+            done: function(data) {
+                var tag = data[0];
+                
+                if (tag) {
+                // Fetch commit data
+                r.util.ajax({
+                    url: tag.commit.url,
+                    type: 'GET',
+                    dataType: 'jsonp',
+                    done: function(commit) {
+                    r.bugs.showUpdate(currentVersion, tag.name, commit.commit.author.date);
+                    
+                    // Set cookie
+                    $.cookie.json = true;
+                    $.cookie('update_check', { 'tag': tag.name, 'date': commit.commit.author.date }, { expires: 1 });
+                    $.cookie.json = false;
+                    },
+                    fail: function() {} // Ignore failing
+                });
+                }
+            },
+            fail: function() {} // Ignore failing
+            });
+        } else {
+            // Show update with cached GitHub data
+            r.bugs.showUpdate(currentVersion, cookie.tag, cookie.date);
+        }
+        }
+    });
+};
+
+/**
+ * Show update label if needed.
+ */
+r.bugs.showUpdate = function(currentVersion, tag, tagDate) {
+    var date = moment(tagDate);
+    var diff = moment().diff(date);
+
+
+    if (diff > 3600000 * 24 && r.bugs.normalizeTag(currentVersion) < r.bugs.normalizeTag(tag)) {
+        $('#subscriptions .update, #bugs-version-new')
+        .show()
+        .html('<a href="http://www.sismics.com/reader/" target="_blank">' + $.t('bugs.newupdate') + ': ' + tag + '</a>');
+    }
+};
+
+/**
+ * Transform a tag in int value.
+ */
+r.bugs.normalizeTag = function(tag) {
+    var out = parseInt(tag.replace(/\./g, ''));
+    if (out < 10) out *= 100;
+    if (out < 100) out *= 10;
+    return out;
+};
+
+/**
+ * Load logs.
+ */
+r.bugs.logsLoading = false;
+r.bugs.loadLogs = function(next) {
+    // Stop if already loading something
+    if (r.bugs.logsLoading) {
+        return;
+    }
+
+    // Check if there is more to load
+    var count = 0;
+    if (next) {
+        var total = $('#logs-table').data('total');
+        count = $('#logs-table tr.log-item').length;
+        if (count >= total) {
+        return;
+        }
+    }
+
+    // Calling API
+    r.bugs.logsLoading = true;
+    r.util.ajax({
+        url: r.util.url.app_log,
+        type: 'GET',
+        data: { limit: 100, offset: next ? count : 0, level: $('#logs-level-select').val() },
+        done: function(data) {
+        // Building table rows
+        var html = '';
+        $(data.logs).each(function(i, log) {
+            html += '<tr class="log-item ' + log.level.toLowerCase() + '">'
+                + '<td class="date">' + moment(log.date).format('YYYY-MM-DD HH:mm:ss') + '</td>'
+                + '<td class="level">' + log.level + '</td>'
+                + '<td class="tag">' + log.tag + '</td>'
+                + '<td class="message">' + log.message + '</td>'
+            '</tr>';
+        });
+        
+        // Add or replace new rows
+        if (next) {
+            $('#logs-table').append(html);
+        } else {
+            $('#logs-table').html(html);
+            $('#logs-table').data('total', data.total)
+        }
+        },
+        always: function() {
+        r.bugs.logsLoading = false;
+        }
+    });
+};

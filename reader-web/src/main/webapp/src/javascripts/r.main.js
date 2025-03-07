@@ -13,6 +13,7 @@ var r = {
   search: {},
   settings: {},
   about: {},
+  bugs: {},
   wizard: {},
   theme: {},
   shortcuts: {},
@@ -43,6 +44,7 @@ r.main.initModules = function() {
   r.search.init();
   r.settings.init();
   r.about.init();
+  r.bugs.init();
   r.wizard.init();
   r.theme.init();
   r.shortcuts.init();
@@ -64,5 +66,6 @@ r.main.reset = function() {
   r.feed.reset();
   r.settings.reset();
   r.about.reset();
+  r.bugs.reset();
   r.wizard.reset();
 };

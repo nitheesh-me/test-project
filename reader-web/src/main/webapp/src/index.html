@@ -46,6 +46,7 @@
     <script src="javascripts/r.search.js" type="text/javascript"></script>
     <script src="javascripts/r.settings.js" type="text/javascript"></script>
     <script src="javascripts/r.about.js" type="text/javascript"></script>
+    <script src="javascripts/r.bugs.js" type="text/javascript"></script>
     <script src="javascripts/r.wizard.js" type="text/javascript"></script>
     <script src="javascripts/r.theme.js" type="text/javascript"></script>
     <script src="javascripts/r.util.js" type="text/javascript"></script>
@@ -201,6 +202,24 @@
           <li><strong data-i18n="about.informations.website">Website:</strong> <a href="http://www.sismics.com/reader" target="_blank">www.sismics.com/reader</a></li>
           <li><strong>GitHub:</strong> <a href="https://github.com/sismics/reader" target="_blank">github.com/sismics/reader</a></li>
           <li><strong data-i18n="about.informations.contact">Contact:</strong> <a href="mailto:reader@sismics.com">reader@sismics.com</a></li>
+        </ul>
+      </div>
+      <div id="bugs-container">
+        <div class="admin">
+        
+          <h1 data-i18n="bugs.rebuildindex.title">Report bugs</h1>
+        </div>
+<!--         
+        <h1 data-i18n="bugs.license.title">License</h1>
+        <p data-i18n="[html]bugs.license.content">Reader is released under the terms of the GPL license. See <a href="http://opensource.org/licenses/GPL-2.0" target="_blank">http://opensource.org/licenses/GPL-2.0</a> for more information.</p> -->
+        
+        <h1 data-i18n="bugs.informations.title">More information</h1>
+        <ul>
+          <li><strong data-i18n="bugs.informations.version">Version:</strong> <span id="bugs-version"></span> <span id="bugs-version-new"></span></li>
+          <li><strong data-i18n="bugs.informations.memory">Memory:</strong> <span id="bugs-used-memory"></span> / <span id="bugs-total-memory"></span></li>
+          <li><strong data-i18n="bugs.informations.website">Website:</strong> <a href="http://www.sismics.com/reader" target="_blank">www.sismics.com/reader</a></li>
+          <li><strong>GitHub:</strong> <a href="https://github.com/sismics/reader" target="_blank">github.com/sismics/reader</a></li>
+          <li><strong data-i18n="bugs.informations.contact">Contact:</strong> <a href="mailto:reader@sismics.com">reader@sismics.com</a></li>
         </ul>
         
       </div>
@@ -375,7 +394,7 @@
         <ul>
           <li><a href="#/settings/" data-i18n="toolbar.settings">Settings</a></li>
           <li><a href="#/about/" data-i18n="toolbar.about">About</a></li>
-          <li><a href="https://github.com/sismics/reader/issues" target="_blank" data-i18n="toolbar.reportbug">Report a bug</a></li>
+          <li><a href="#/bugs/" data-i18n="toolbar.reportbug">Report a bug</a></li> 
           <li><a href="#" class="logout" data-i18n="toolbar.logout">Logout</a></li>
         </ul>
       </div>
