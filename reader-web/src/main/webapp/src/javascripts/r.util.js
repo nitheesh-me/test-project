@@ -39,9 +39,9 @@ r.util.url = {
   app_version: '../api/app',
   app_map_port: '../api/app/map_port',
   github_tags: 'https://api.github.com/repos/sismics/reader/tags',
-  bugs: '/reader-web/api/bugs',
-  bugs_delete: '/reader-web/api/bugs/{id}',
-  bugs_resolve: '/reader-web/api/bugs/{id}/resolve'
+  bugs: '../api/bugs',
+  bugs_delete: '../api/bugs/{id}',
+  bugs_resolve: '../api/bugs/{id}/resolve'
 };
 
 /**
