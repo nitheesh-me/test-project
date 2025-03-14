@@ -208,19 +208,24 @@
         <div class="admin">
         
           <h1 data-i18n="bugs.rebuildindex.title">Report bugs</h1>
+          <input type="text" id="bug-description" placeholder="Description" /><br />
+          <input class="important" type="submit" id="bug-submit-button" value="Submit" data-i18n="[value]bug.submit" />
         </div>
-<!--         
-        <h1 data-i18n="bugs.license.title">License</h1>
-        <p data-i18n="[html]bugs.license.content">Reader is released under the terms of the GPL license. See <a href="http://opensource.org/licenses/GPL-2.0" target="_blank">http://opensource.org/licenses/GPL-2.0</a> for more information.</p> -->
         
-        <h1 data-i18n="bugs.informations.title">More information</h1>
-        <ul>
+        <h1 data-i18n="bugs.informations.title">List of submitted bugs</h1>
+        <!-- <ul>
           <li><strong data-i18n="bugs.informations.version">Version:</strong> <span id="bugs-version"></span> <span id="bugs-version-new"></span></li>
           <li><strong data-i18n="bugs.informations.memory">Memory:</strong> <span id="bugs-used-memory"></span> / <span id="bugs-total-memory"></span></li>
           <li><strong data-i18n="bugs.informations.website">Website:</strong> <a href="http://www.sismics.com/reader" target="_blank">www.sismics.com/reader</a></li>
           <li><strong>GitHub:</strong> <a href="https://github.com/sismics/reader" target="_blank">github.com/sismics/reader</a></li>
           <li><strong data-i18n="bugs.informations.contact">Contact:</strong> <a href="mailto:reader@sismics.com">reader@sismics.com</a></li>
-        </ul>
+        </ul> -->
+        <div id="bugs-list-container">
+          <table id="bugs-list-table">
+          </table>
+          <!-- Add this new element to display the list of bugs -->
+          <ul id="bug-list"></ul>
+        </div>
         
       </div>
       

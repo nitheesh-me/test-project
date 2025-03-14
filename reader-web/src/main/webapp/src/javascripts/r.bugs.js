@@ -29,6 +29,8 @@ r.bugs.init = function() {
         // User is not admin, hide related features
         $('#bugs-container .admin').hide();
         }
+
+        r.bugs.loadList();
     });
 
     // Rebuild index button click
@@ -111,6 +113,77 @@ r.bugs.init = function() {
         }
         }
     });
+
+    $('#bug-submit-button').click(function() {
+        let bugDescription = $('#bug-description').val();
+        console.log('Bug description:', bugDescription);
+        if (bugDescription) {
+            $.ajax({
+                // TODO: Update URL
+                url: '/api/bugs',
+                method: 'POST',
+                data: { description: bugDescription },
+                success: function() {
+                    console.log('Bug added successfully');
+                    // Optionally reload the bug list
+                    r.bugs.loadList();
+                }
+            });
+        }
+    });
+};
+
+/**
+ * Fetch and display bugs with "Delete" and "Resolve" buttons.
+ */
+r.bugs.loadList = function() {
+  // Dummy data for testing
+  let dummyData = [
+    { id: 1, description: 'Bug #1: Something is not working as expected.' },
+    { id: 2, description: 'Bug #2: Another issue observed with the UI.' },
+    { id: 3, description: 'Bug #3: Example bug description' }
+  ];
+
+  let $bugTable = $('#bugs-list-table');
+  $bugTable.empty();
+
+  dummyData.forEach(function(bug) {
+    let row = `
+      <tr>
+        <td>${bug.description}</td>
+        <td><button class="delete-bug" data-id="${bug.id}">Delete</button></td>
+        <td><button class="resolve-bug" data-id="${bug.id}">Resolve</button></td>
+      </tr>
+    `;
+    $bugTable.append(row);
+  });
+
+  // Attach button event handlers
+  $('.delete-bug').on('click', function() {
+    let bugId = $(this).data('id');
+    $.ajax({
+        // TODO: Update URL
+      url: '/api/bugs/' + bugId,
+      method: 'DELETE',
+      success: function() {
+        // Reload or remove row from table
+        console.log('Bug deleted:', bugId);
+      }
+    });
+  });
+
+  $('.resolve-bug').on('click', function() {
+    let bugId = $(this).data('id');
+    $.ajax({
+        // TODO: Update URL
+      url: '/api/bugs/' + bugId + '/resolve',
+      method: 'POST',
+      success: function() {
+        // Update or remove row from table
+        console.log('Bug resolved:', bugId);
+      }
+    });
+  });
 };
 
 /**
