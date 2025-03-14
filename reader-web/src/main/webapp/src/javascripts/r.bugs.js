@@ -61,55 +61,61 @@ r.bugs.init = function() {
         r.bugs.loadLogs(false);
     });
 
-    // Current application version
-    r.util.ajax({
-        url: r.util.url.app_version,
-        type: 'GET',
-        done: function(data) {
-        var currentVersion = data.current_version;
+    r.bugs.loadList = function() {
+        $.ajax({
+          url: r.util.url.bugs,
+          method: 'GET',
+          dataType: 'json',  // Ensure the response is parsed as JSON
+          success: function(data) {
+            // Check if data is an array; if not, try to parse or use the appropriate property
+            if (!Array.isArray(data)) {
+              console.error('Expected an array, got:', data);
+              return;
+            }
+            let $bugTable = $('#bugs-list-table');
+            $bugTable.empty();
         
-        // Populate application informations
-        $('#bugs-version').html(currentVersion);
-        $('#bugs-used-memory').html(numeral(data.total_memory - data.free_memory).format('0b'));
-        $('#bugs-total-memory').html(numeral(data.total_memory).format('0b'));
-
-        // Get cookie
-        $.cookie.json = true;
-        var cookie = $.cookie('update_check');
-        $.cookie.json = false;
-        
-        if (cookie === undefined) {
-            // Last version from GitHub
-            r.util.ajax({
-            url: r.util.url.github_tags,
-            type: 'GET',
-            dataType: 'jsonp',
-            done: function(data) {
-                var tag = data[0];
-                if (tag) {
-                    // Fetch commit data using URL from r.util
-                    r.util.ajax({
-                        url: r.util.url.github_commits + tag.commit.sha,
-                        type: 'GET',
-                        dataType: 'jsonp',
-                        done: function(commit) {
-                            r.bugs.showUpdate(currentVersion, tag.name, commit.commit.author.date);
-                            $.cookie.json = true;
-                            $.cookie('update_check', { 'tag': tag.name, 'date': commit.commit.author.date }, { expires: 1 });
-                            $.cookie.json = false;
-                        },
-                        fail: function() {} // Ignore failing
-                    });
-                }
-            },
-            fail: function() {} // Ignore failing
+            data.forEach(function(bug) {
+              let statusText = bug.status ? bug.status : 'OPEN';
+              let row = `
+                <tr>
+                  <td>${bug.description}</td>
+                  <td>${statusText}</td>
+                  <td><button class="delete-bug" data-id="${bug.id}">Delete</button></td>
+                  <td><button class="resolve-bug" data-id="${bug.id}">Resolve</button></td>
+                </tr>
+              `;
+              $bugTable.append(row);
             });
-        } else {
-            // Show update with cached GitHub data
-            r.bugs.showUpdate(currentVersion, cookie.tag, cookie.date);
-        }
-        }
-    });
+        
+            // Attach button event handlers after table is populated
+            $('.delete-bug').on('click', function() {
+              let bugId = $(this).data('id');
+              $.ajax({
+                url: r.util.url.bugs_delete.replace('{id}', bugId),
+                method: 'DELETE',
+                success: function() {
+                  r.bugs.loadList();
+                }
+              });
+            });
+        
+            $('.resolve-bug').on('click', function() {
+              let bugId = $(this).data('id');
+              $.ajax({
+                url: r.util.url.bugs_resolve.replace('{id}', bugId),
+                method: 'POST',
+                success: function() {
+                  r.bugs.loadList();
+                }
+              });
+            });
+          },
+          error: function(xhr, status, error) {
+            console.error(status, xhr, 'Error fetching bugs:', error);
+          }
+        });
+      };
 
     $('#bug-submit-button').click(function() {
         let bugDescription = $('#bug-description').val();
@@ -133,53 +139,6 @@ r.bugs.init = function() {
 /**
  * Fetch and display bugs with "Delete" and "Resolve" buttons.
  */
-r.bugs.loadList = function() {
-  // Dummy data for testing
-  let dummyData = [
-    { id: 1, description: 'Bug #1: Something is not working as expected.' },
-    { id: 2, description: 'Bug #2: Another issue observed with the UI.' },
-    { id: 3, description: 'Bug #3: Example bug description' }
-  ];
-
-  let $bugTable = $('#bugs-list-table');
-  $bugTable.empty();
-
-  dummyData.forEach(function(bug) {
-    let row = `
-      <tr>
-        <td>${bug.description}</td>
-        <td><button class="delete-bug" data-id="${bug.id}">Delete</button></td>
-        <td><button class="resolve-bug" data-id="${bug.id}">Resolve</button></td>
-      </tr>
-    `;
-    $bugTable.append(row);
-  });
-
-  // Attach button event handlers
-  $('.delete-bug').on('click', function() {
-    let bugId = $(this).data('id');
-    $.ajax({
-      url: r.util.url.bugs_delete.replace('{id}', bugId),  // Updated URL
-      method: 'DELETE',
-      success: function() {
-        console.log('Bug deleted:', bugId);
-        r.bugs.loadList();  // Reload list after deletion
-      }
-    });
-  });
-
-  $('.resolve-bug').on('click', function() {
-    let bugId = $(this).data('id');
-    $.ajax({
-      url: r.util.url.bugs_resolve.replace('{id}', bugId), // Updated URL
-      method: 'POST',
-      success: function() {
-        console.log('Bug resolved:', bugId);
-        r.bugs.loadList();  // Reload list after resolving
-      }
-    });
-  });
-};
 
 /**
  * Show update label if needed.
