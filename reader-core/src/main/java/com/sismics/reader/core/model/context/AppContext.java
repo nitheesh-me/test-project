@@ -6,6 +6,7 @@ import com.sismics.reader.core.service.IIndexingService;
 import com.sismics.reader.core.service.IndexingService;
 import com.sismics.reader.core.util.AsyncTaskManager;
 import com.sismics.reader.core.event.EventBusManager;
+import com.sismics.reader.core.reporting.BugReportManager;
 
 /**
  * Global application context.
@@ -18,12 +19,16 @@ public class AppContext {
     private final IIndexingService indexingService;
     private final EventBusManager eventBusManager;
     private final AsyncTaskManager asyncTaskManager;
+    private static final BugReportManager bugReportManager = BugReportManager.getInstance();
 
     private AppContext(Builder builder) {
         this.feedService = builder.feedService;
         this.indexingService = builder.indexingService;
         this.eventBusManager = builder.eventBusManager;
         this.asyncTaskManager = builder.asyncTaskManager;
+
+        // Initialize bug reporting
+        bugReportManager.getBugs(); // Ensures BugReportManager is loaded
     }
 
     public static Builder builder() {
@@ -99,5 +104,9 @@ public class AppContext {
 
     public void waitForAsyncCompletion() {
         asyncTaskManager.waitForAsyncCompletion();
+    }
+
+    public static BugReportManager getBugReportManager() {
+        return bugReportManager;
     }
 }

@@ -86,23 +86,20 @@ r.bugs.init = function() {
             dataType: 'jsonp',
             done: function(data) {
                 var tag = data[0];
-                
                 if (tag) {
-                // Fetch commit data
-                r.util.ajax({
-                    url: tag.commit.url,
-                    type: 'GET',
-                    dataType: 'jsonp',
-                    done: function(commit) {
-                    r.bugs.showUpdate(currentVersion, tag.name, commit.commit.author.date);
-                    
-                    // Set cookie
-                    $.cookie.json = true;
-                    $.cookie('update_check', { 'tag': tag.name, 'date': commit.commit.author.date }, { expires: 1 });
-                    $.cookie.json = false;
-                    },
-                    fail: function() {} // Ignore failing
-                });
+                    // Fetch commit data using URL from r.util
+                    r.util.ajax({
+                        url: r.util.url.github_commits + tag.commit.sha,
+                        type: 'GET',
+                        dataType: 'jsonp',
+                        done: function(commit) {
+                            r.bugs.showUpdate(currentVersion, tag.name, commit.commit.author.date);
+                            $.cookie.json = true;
+                            $.cookie('update_check', { 'tag': tag.name, 'date': commit.commit.author.date }, { expires: 1 });
+                            $.cookie.json = false;
+                        },
+                        fail: function() {} // Ignore failing
+                    });
                 }
             },
             fail: function() {} // Ignore failing
@@ -120,7 +117,7 @@ r.bugs.init = function() {
         if (bugDescription) {
             $.ajax({
                 // TODO: Update URL
-                url: '/api/bugs',
+                url: r.util.url.bugs,
                 method: 'POST',
                 data: { description: bugDescription },
                 success: function() {
@@ -162,12 +159,11 @@ r.bugs.loadList = function() {
   $('.delete-bug').on('click', function() {
     let bugId = $(this).data('id');
     $.ajax({
-        // TODO: Update URL
-      url: '/api/bugs/' + bugId,
+      url: r.util.url.bugs_delete.replace('{id}', bugId),  // Updated URL
       method: 'DELETE',
       success: function() {
-        // Reload or remove row from table
         console.log('Bug deleted:', bugId);
+        r.bugs.loadList();  // Reload list after deletion
       }
     });
   });
@@ -175,12 +171,11 @@ r.bugs.loadList = function() {
   $('.resolve-bug').on('click', function() {
     let bugId = $(this).data('id');
     $.ajax({
-        // TODO: Update URL
-      url: '/api/bugs/' + bugId + '/resolve',
+      url: r.util.url.bugs_resolve.replace('{id}', bugId), // Updated URL
       method: 'POST',
       success: function() {
-        // Update or remove row from table
         console.log('Bug resolved:', bugId);
+        r.bugs.loadList();  // Reload list after resolving
       }
     });
   });
