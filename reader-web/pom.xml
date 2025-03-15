@@ -19,7 +19,7 @@
       <groupId>com.sismics.reader</groupId>
       <artifactId>reader-core</artifactId>
     </dependency>
-    
+
     <dependency>
       <groupId>com.sismics.reader</groupId>
       <artifactId>reader-web-common</artifactId>
@@ -33,19 +33,19 @@
     
     <dependency>
       <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-bundle</artifactId>
-    </dependency>
-    
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-json</artifactId>
     </dependency>
-    
-    <dependency>
-      <groupId>com.sun.jersey.contribs</groupId>
-      <artifactId>jersey-multipart</artifactId>
-    </dependency>
       
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-core-asl</artifactId>
+      <version>1.9.13</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-mapper-asl</artifactId>
+      <version>1.9.13</version>
+    </dependency>
     <!-- Other external dependencies -->
     <dependency>
       <groupId>commons-lang</groupId>
