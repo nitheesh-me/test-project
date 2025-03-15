@@ -19,13 +19,13 @@ public class BugStatusUpdateEvent implements BugEvent {
     }
 
     public BugStatus getStatus() {
-        return status;
+        return this.status;
     }
 
     @Override
     public void trigger(List<Bug> bugList) {
         bugList.stream()
             .filter(bug -> bug.getId().equals(id))
-            .forEach(bug -> bug.setStatus(status));
+            .forEach(bug -> bug.setStatus(this.status));
     }    
 }

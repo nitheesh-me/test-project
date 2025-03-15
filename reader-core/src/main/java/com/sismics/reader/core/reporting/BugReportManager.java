@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.sismics.reader.core.reporting.events.BugDeletedEvent;
 import com.sismics.reader.core.reporting.events.BugEvent;
 import com.sismics.reader.core.reporting.events.BugFiledEvent;
+import com.sismics.reader.core.reporting.events.BugStatusUpdateEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class BugReportManager {
     }
 
     public void resolveBug(String id) {
-        BugEvent event = new BugFiledEvent(id, null);
+        BugEvent event = new BugStatusUpdateEvent(id, BugStatus.RESOLVED);
         event.trigger(bugList);
         subject.notifyObservers(bugList);
     }
