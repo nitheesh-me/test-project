@@ -26,4 +26,9 @@ public class Bug {
     public void setStatus(BugStatus status) {
         this.status = status;
     }
+
+    @Override
+    public String toString() {
+        return "Bug" + id + ": " + description + " (" + status + ")";
+    }
 }

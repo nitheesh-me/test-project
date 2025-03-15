@@ -8,7 +8,7 @@ public class BugLogger implements Observer {
     @Override
     public void update(List<Bug> bugs) {
         for (Bug bug : bugs) {
-            System.out.println("Bug: " + bug.getId() + " - " + bug.getDescription() + " - " + bug.getStatus());
+            System.out.println(bug.toString());
         }
     }
 }
